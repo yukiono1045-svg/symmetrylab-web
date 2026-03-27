@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SYMMETRY Labの研修プログラムへのお申し込みページ。実践スキル研修・ケース面接対策のオンライン予約が可能です。">
+  <meta property="og:title" content="お申し込み | SYMMETRY Lab株式会社">
+  <meta property="og:description" content="研修プログラムのオンライン予約。Stripeによる安全な決済でお申し込みいただけます。">
+  <meta property="og:type" content="website">
+  <link rel="canonical" href="https://symmetrylab.jp/booking.html">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <title>お申し込み | SYMMETRY Lab株式会社</title>
+  <style>
+    /* モーダルスタイル */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal {
+      background: #fff;
+      border-radius: 12px;
+      max-width: 520px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .modal-header {
+      background: var(--color-primary);
+      color: #fff;
+      padding: 1.25rem 1.5rem;
+      border-radius: 12px 12px 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h3 {
+      color: #fff;
+      margin: 0;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0 0.25rem;
+      line-height: 1;
+    }
+    .modal-body {
+      padding: 1.5rem;
+    }
+    .date-option {
+      display: block;
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius);
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #fff;
+      text-align: left;
+      font-family: var(--font-family);
+      font-size: 0.95rem;
+    }
+    .date-option:hover {
+      border-color: var(--color-accent);
+    }
+    .date-option.selected {
+      border-color: var(--color-accent);
+      background: #f0fafe;
+    }
+    .date-option .slots {
+      font-size: 0.8rem;
+      color: var(--color-text-light);
+    }
+    .modal-price {
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin: 1rem 0;
+      padding: 0.75rem;
+      background: var(--color-bg-alt);
+      border-radius: var(--radius);
+    }
+    .modal-price span {
+      font-size: 0.9rem;
+      font-weight: 400;
+    }
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 0.5rem;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .no-dates {
+      text-align: center;
+      padding: 2rem;
+      color: var(--color-text-light);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo">SYMMETRY <span>Lab</span></a>
+      <button class="nav-toggle" aria-label="メニュー" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="services.html">サービス</a>
+        <a href="instructor.html">講師紹介</a>
+        <a href="blog/index.html">コラム</a>
+        <a href="faq.html">FAQ</a>
+        <a href="company.html">会社概要</a>
+        <a href="contact.html">お問い合わせ</a>
+        <a href="booking.html" class="btn-primary">お申し込み</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Breadcrumb -->
+  <div class="breadcrumb">
+    <div class="container">
+      <a href="index.html">ホーム</a> &gt; <span>お申し込み</span>
+    </div>
+  </div>
+
+  <!-- Booking Message -->
+  <div id="booking-message" class="container" style="margin-top:1rem;"></div>
+
+  <!-- Page Content -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header">
+        <h1>お申し込み</h1>
+        <p>ご希望のプログラムを選択してお申し込みください</p>
+      </div>
+
+      <div class="grid-3 fade-in">
+        <!-- 実践スキル研修 -->
+        <div class="service-card">
+          <div class="service-card-header">
+            <h3>実践スキル研修</h3>
+            <p class="text-small" style="opacity:0.8">全3日間 / M&A実務スキル習得</p>
+          </div>
+          <div class="service-card-body" style="text-align:center;">
+            <ul style="text-align:left;">
+              <li>Day1：M&A基礎知識</li>
+              <li>Day2：BDD実践</li>
+              <li>Day3：事業計画策定ハンズオン</li>
+            </ul>
+            <p style="font-size:1.5rem;font-weight:700;margin:1.5rem 0 0.5rem;">¥55,000<span style="font-size:0.9rem;font-weight:400;">（税込）</span></p>
+            <p class="text-small text-light">テキスト・演習資料込み</p>
+            <button class="btn-primary" style="margin-top:1rem;" data-training-type="practical_skills" onclick="openBookingModal(this)">この研修に申し込む</button>
+          </div>
+        </div>
+
+        <!-- ケース面接対策 新卒 -->
+        <div class="service-card">
+          <div class="service-card-header">
+            <h3>ケース面接対策（新卒）</h3>
+            <p class="text-small" style="opacity:0.8">大学生・大学院生対象</p>
+          </div>
+          <div class="service-card-body" style="text-align:center;">
+            <ul style="text-align:left;">
+              <li>フレームワーク思考の基礎</li>
+              <li>フェルミ推定の解法</li>
+              <li>模擬面接3回付き</li>
+            </ul>
+            <p style="font-size:1.5rem;font-weight:700;margin:1.5rem 0 0.5rem;">¥33,000<span style="font-size:0.9rem;font-weight:400;">（税込）</span></p>
+            <p class="text-small text-light">個別フィードバック付き</p>
+            <button class="btn-primary" style="margin-top:1rem;" data-training-type="case_interview_new" onclick="openBookingModal(this)">この講座に申し込む</button>
+          </div>
+        </div>
+
+        <!-- ケース面接対策 中途 -->
+        <div class="service-card">
+          <div class="service-card-header">
+            <h3>ケース面接対策（中途）</h3>
+            <p class="text-small" style="opacity:0.8">社会人経験者対象</p>
+          </div>
+          <div class="service-card-body" style="text-align:center;">
+            <ul style="text-align:left;">
+              <li>中途面接の差別化戦略</li>
+              <li>高度なケース解法</li>
+              <li>模擬面接3回付き</li>
+            </ul>
+            <p style="font-size:1.5rem;font-weight:700;margin:1.5rem 0 0.5rem;">¥44,000<span style="font-size:0.9rem;font-weight:400;">（税込）</span></p>
+            <p class="text-small text-light">個別フィードバック付き</p>
+            <button class="btn-primary" style="margin-top:1rem;" data-training-type="case_interview_mid" onclick="openBookingModal(this)">この講座に申し込む</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="fade-in" style="max-width:700px;margin:2rem auto;padding:1.5rem;background:#f8f9fa;border-radius:8px;">
+        <h3 style="margin-bottom:0.5rem;">お支払いについて</h3>
+        <ul>
+          <li>お支払いはStripeによるクレジットカード決済となります。</li>
+          <li>お申し込み後、自動返信メールにて受講詳細をお送りします。</li>
+          <li>キャンセルポリシーについては<a href="faq.html">FAQ</a>をご確認ください。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Booking Modal -->
+  <div class="modal-overlay" id="booking-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">お申し込み</h3>
+        <button class="modal-close" onclick="closeBookingModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-loading" style="text-align:center;padding:2rem;">
+          <div class="loading-spinner" style="width:32px;height:32px;border-width:4px;border-color:rgba(0,180,216,0.2);border-top-color:var(--color-accent);"></div>
+          <p style="margin-top:1rem;color:var(--color-text-light);">日程を取得中...</p>
+        </div>
+
+        <form id="booking-form" style="display:none;" onsubmit="submitBooking(event)">
+          <input type="hidden" id="booking-training-type" name="training_type">
+          <input type="hidden" id="booking-training-date" name="training_date">
+
+          <!-- 日程選択 -->
+          <div class="form-group">
+            <label>ご希望の日程 <span class="required">*必須</span></label>
+            <div id="date-options"></div>
+          </div>
+
+          <div class="modal-price" id="modal-price"></div>
+
+          <!-- 顧客情報 -->
+          <div class="form-group">
+            <label for="booking-name">氏名 <span class="required">*必須</span></label>
+            <input type="text" id="booking-name" name="customer_name" required placeholder="山田 太郎">
+          </div>
+          <div class="form-group">
+            <label for="booking-email">メールアドレス <span class="required">*必須</span></label>
+            <input type="email" id="booking-email" name="customer_email" required placeholder="example@email.com">
+          </div>
+          <div class="form-group">
+            <label for="booking-phone">電話番号 <span class="required">*必須</span></label>
+            <input type="tel" id="booking-phone" name="customer_phone" required placeholder="090-1234-5678">
+          </div>
+          <div class="form-group">
+            <label for="booking-company">会社名・所属（任意）</label>
+            <input type="text" id="booking-company" name="customer_company" placeholder="株式会社〇〇">
+          </div>
+
+          <button type="submit" class="btn-primary" id="submit-btn" style="width:100%;padding:1rem;font-size:1.1rem;">
+            お支払いに進む
+          </button>
+          <p class="text-small text-light text-center" style="margin-top:0.75rem;">Stripeの安全な決済画面に移動します</p>
+        </form>
+
+        <div id="modal-no-dates" class="no-dates" style="display:none;">
+          <p>現在、ご予約可能な日程がございません。</p>
+          <p>新しい日程が公開されるまでお待ちください。</p>
+          <a href="contact.html" class="btn-outline" style="margin-top:1rem;">お問い合わせ</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">SYMMETRY <span>Lab</span></div>
+          <p class="text-small">戦略コンサルへの転職を目指す方のための実践型研修サービスを提供するSYMMETRY Lab株式会社の公式サイトです。</p>
+        </div>
+        <div>
+          <h4>サービス</h4>
+          <div class="footer-links">
+            <a href="services.html#practical-skills">実践スキル研修</a>
+            <a href="services.html#case-interview">ケース面接対策</a>
+            <a href="booking.html">お申し込み</a>
+          </div>
+        </div>
+        <div>
+          <h4>会社情報</h4>
+          <div class="footer-links">
+            <a href="company.html">会社概要</a>
+            <a href="instructor.html">講師紹介</a>
+            <a href="blog/index.html">コラム</a>
+          </div>
+        </div>
+        <div>
+          <h4>サポート</h4>
+          <div class="footer-links">
+            <a href="faq.html">よくある質問</a>
+            <a href="contact.html">お問い合わせ</a>
+            <a href="privacy.html">プライバシーポリシー</a>
+            <a href="tokushoho.html">特定商取引法に基づく表記</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        &copy; 2026 SYMMETRY Lab株式会社 All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script>
+    const API_BASE = window.location.origin;
+    let selectedDate = null;
+
+    // 決済完了後: session_idがURLにあればExcelに記録
+    (async () => {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id');
+      if (params.get('success') === 'true' && sessionId) {
+        try {
+          await fetch(`${API_BASE}/api/confirm-booking?session_id=${sessionId}`);
+          console.log('[予約記録完了]');
+        } catch (e) {
+          console.error('[予約記録エラー]', e);
+        }
+      }
+    })();
+
+    async function openBookingModal(btn) {
+      const trainingType = btn.dataset.trainingType;
+      const modal = document.getElementById('booking-modal');
+      const form = document.getElementById('booking-form');
+      const loading = document.getElementById('modal-loading');
+      const noDates = document.getElementById('modal-no-dates');
+
+      // リセット
+      form.style.display = 'none';
+      loading.style.display = 'block';
+      noDates.style.display = 'none';
+      selectedDate = null;
+      document.getElementById('booking-training-type').value = trainingType;
+      document.getElementById('booking-training-date').value = '';
+
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/available-dates?training_type=${trainingType}`);
+        if (!res.ok) throw new Error('日程の取得に失敗しました');
+        const data = await res.json();
+
+        document.getElementById('modal-title').textContent = data.training_name + ' お申し込み';
+        document.getElementById('modal-price').innerHTML = data.price_label + '<span>（税込）</span>';
+
+        const dateContainer = document.getElementById('date-options');
+        dateContainer.innerHTML = '';
+
+        if (data.dates.length === 0) {
+          loading.style.display = 'none';
+          noDates.style.display = 'block';
+          return;
+        }
+
+        data.dates.forEach(d => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'date-option';
+          btn.innerHTML = `${d.label} <span class="slots">残り${d.slots_remaining}席</span>`;
+          btn.dataset.date = d.date;
+          btn.addEventListener('click', () => selectDate(btn, d.date));
+          dateContainer.appendChild(btn);
+        });
+
+        loading.style.display = 'none';
+        form.style.display = 'block';
+      } catch (err) {
+        loading.style.display = 'none';
+        noDates.style.display = 'block';
+        noDates.querySelector('p').textContent = 'エラーが発生しました。サーバーが起動しているか確認してください。';
+        console.error(err);
+      }
+    }
+
+    function selectDate(btn, date) {
+      document.querySelectorAll('.date-option').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedDate = date;
+      document.getElementById('booking-training-date').value = date;
+    }
+
+    function closeBookingModal() {
+      document.getElementById('booking-modal').classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    // モーダル外クリックで閉じる
+    document.getElementById('booking-modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeBookingModal();
+    });
+
+    async function submitBooking(e) {
+      e.preventDefault();
+
+      if (!selectedDate) {
+        alert('日程を選択してください。');
+        return;
+      }
+
+      const submitBtn = document.getElementById('submit-btn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="loading-spinner"></span>処理中...';
+
+      const body = {
+        training_type: document.getElementById('booking-training-type').value,
+        training_date: document.getElementById('booking-training-date').value,
+        customer_name: document.getElementById('booking-name').value,
+        customer_email: document.getElementById('booking-email').value,
+        customer_phone: document.getElementById('booking-phone').value,
+        customer_company: document.getElementById('booking-company').value,
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/api/create-checkout-session`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || '申し込みに失敗しました');
+        }
+
+        const data = await res.json();
+        window.location.href = data.checkout_url;
+      } catch (err) {
+        alert(err.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'お支払いに進む';
+      }
+    }
+  </script>
+</body>
+</html>
