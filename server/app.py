@@ -254,52 +254,41 @@ async def export_bookings(key: str = ""):
     if key != ADMIN_KEY:
         raise HTTPException(status_code=403, detail="認証が必要です")
 
-    conn = get_db()
-    rows = conn.execute("SELECT * FROM bookings ORDER BY id DESC").fetchall()
-    conn.close()
+    try:
+        conn = get_db()
+        rows = conn.execute("SELECT * FROM bookings ORDER BY id DESC").fetchall()
+        conn.close()
 
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "予約一覧"
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "bookings"
 
-    headers = [
-        "予約ID", "申込日時", "研修種別", "研修日",
-        "氏名", "メールアドレス", "電話番号", "会社名",
-        "金額（税込）", "決済ステータス", "Stripe Session ID", "備考"
-    ]
-    ws.append(headers)
+        headers = [
+            "予約ID", "申込日時", "研修種別", "研修日",
+            "氏名", "メールアドレス", "電話番号", "会社名",
+            "金額", "決済ステータス", "Stripe Session ID", "備考"
+        ]
+        ws.append(headers)
 
-    header_font = Font(bold=True, color="FFFFFF")
-    header_fill = PatternFill(start_color="1B2A4A", end_color="1B2A4A", fill_type="solid")
-    for cell in ws[1]:
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = Alignment(horizontal="center")
+        for row in rows:
+            ws.append([
+                row["booking_id"], row["created_at"], row["training_name"],
+                row["training_date"], row["customer_name"], row["customer_email"],
+                row["customer_phone"], row["customer_company"], row["amount"],
+                row["payment_status"], row["stripe_session_id"], row["notes"]
+            ])
 
-    widths = [12, 18, 22, 14, 16, 28, 16, 20, 14, 12, 36, 16]
-    for i, w in enumerate(widths, 1):
-        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = w
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
 
-    for row in rows:
-        ws.append([
-            row["booking_id"], row["created_at"], row["training_name"],
-            row["training_date"], row["customer_name"], row["customer_email"],
-            row["customer_phone"], row["customer_company"], row["amount"],
-            row["payment_status"], row["stripe_session_id"], row["notes"]
-        ])
-
-    output = BytesIO()
-    wb.save(output)
-    output.seek(0)
-
-    from urllib.parse import quote
-    filename = f"予約管理_{datetime.now().strftime('%Y%m%d')}.xlsx"
-    encoded_filename = quote(filename)
-    return StreamingResponse(
-        output,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
-    )
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment; filename=bookings.xlsx"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/bookings")
