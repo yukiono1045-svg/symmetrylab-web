@@ -292,11 +292,13 @@ async def export_bookings(key: str = ""):
     wb.save(output)
     output.seek(0)
 
+    from urllib.parse import quote
     filename = f"予約管理_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    encoded_filename = quote(filename)
     return StreamingResponse(
         output,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{filename}"}
+        headers={"Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"}
     )
 
 
