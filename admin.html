@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>管理画面 | SYMMETRY Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #1a2332;
+      --accent: #00b4d8;
+      --bg: #f4f6f9;
+      --card: #fff;
+      --border: #e0e0e0;
+      --text: #333;
+      --text-light: #888;
+      --success: #27ae60;
+      --danger: #e74c3c;
+      --warning: #f39c12;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); }
+
+    /* ログイン画面 */
+    .login-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg); z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-overlay.hidden { display: none; }
+    .login-box {
+      background: var(--card); padding: 2.5rem; border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 400px; width: 90%;
+      text-align: center;
+    }
+    .login-box h1 { font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--primary); }
+    .login-box p { color: var(--text-light); margin-bottom: 1.5rem; font-size: 0.9rem; }
+    .login-box input {
+      width: 100%; padding: 0.75rem 1rem; border: 2px solid var(--border);
+      border-radius: 8px; font-size: 1rem; margin-bottom: 1rem;
+      font-family: inherit;
+    }
+    .login-box input:focus { outline: none; border-color: var(--accent); }
+    .login-box button {
+      width: 100%; padding: 0.75rem; background: var(--primary); color: #fff;
+      border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;
+      font-family: inherit;
+    }
+    .login-box button:hover { background: #263346; }
+    .login-error { color: var(--danger); font-size: 0.85rem; margin-top: 0.5rem; display: none; }
+
+    /* ヘッダー */
+    .admin-header {
+      background: var(--primary); color: #fff; padding: 1rem 2rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .admin-header h1 { font-size: 1.2rem; }
+    .admin-header a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.9rem; }
+    .admin-header a:hover { color: #fff; }
+
+    /* メインレイアウト */
+    .admin-container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
+
+    /* タブ */
+    .tabs {
+      display: flex; gap: 0; margin-bottom: 1.5rem;
+      border-bottom: 2px solid var(--border);
+    }
+    .tab {
+      padding: 0.75rem 1.5rem; cursor: pointer; border: none; background: none;
+      font-family: inherit; font-size: 0.95rem; color: var(--text-light);
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* 統計カード */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stat-card {
+      background: var(--card); border-radius: 10px; padding: 1.25rem 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .stat-card .label { font-size: 0.8rem; color: var(--text-light); margin-bottom: 0.25rem; }
+    .stat-card .value { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
+    .stat-card .value.accent { color: var(--accent); }
+
+    /* テーブル */
+    .table-container {
+      background: var(--card); border-radius: 10px; overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .table-toolbar {
+      padding: 1rem 1.5rem; display: flex; gap: 1rem; align-items: center;
+      flex-wrap: wrap; border-bottom: 1px solid var(--border);
+    }
+    .table-toolbar select, .table-toolbar input {
+      padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px;
+      font-family: inherit; font-size: 0.9rem;
+    }
+    .table-toolbar select:focus, .table-toolbar input:focus { outline: none; border-color: var(--accent); }
+    .btn-export {
+      padding: 0.5rem 1rem; background: var(--success); color: #fff;
+      border: none; border-radius: 6px; cursor: pointer; font-family: inherit;
+      font-size: 0.9rem; margin-left: auto;
+    }
+    .btn-export:hover { background: #219a52; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    thead { background: #f8f9fa; }
+    th { padding: 0.75rem 1rem; text-align: left; font-weight: 700; color: var(--text-light); white-space: nowrap; }
+    td { padding: 0.75rem 1rem; border-top: 1px solid #f0f0f0; }
+    tr:hover td { background: #fafbfc; }
+    .status-paid { color: var(--success); font-weight: 700; }
+    .status-pending { color: var(--warning); font-weight: 700; }
+    .no-data { text-align: center; padding: 3rem; color: var(--text-light); }
+
+    /* ブロック日管理 */
+    .block-section { margin-bottom: 2rem; }
+    .block-section h3 { margin-bottom: 1rem; }
+    .block-calendar {
+      background: var(--card); border-radius: 10px; padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 1rem;
+    }
+    .block-cal-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;
+    }
+    .block-cal-header button {
+      background: none; border: 1px solid var(--border); border-radius: 6px;
+      padding: 0.4rem 0.75rem; cursor: pointer; font-size: 1rem;
+    }
+    .block-cal-header button:hover { background: #f0f0f0; }
+    .block-cal-header span { font-weight: 700; font-size: 1.1rem; }
+    .block-cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+    }
+    .block-cal-grid .dlabel {
+      text-align: center; font-size: 0.75rem; font-weight: 700; color: var(--text-light);
+      padding: 0.4rem 0;
+    }
+    .block-cal-grid .dlabel:first-child { color: var(--danger); }
+    .block-cal-grid .dlabel:last-child { color: #3498db; }
+    .block-cal-cell {
+      text-align: center; padding: 0.5rem; font-size: 0.85rem;
+      border-radius: 6px; cursor: default; color: #ccc;
+    }
+    .block-cal-cell.active { color: var(--text); cursor: pointer; }
+    .block-cal-cell.active:hover { background: #f0f0f0; }
+    .block-cal-cell.blocked { background: var(--danger); color: #fff; font-weight: 700; }
+    .block-cal-cell.blocked:hover { background: #c0392b; }
+    .block-type-select { margin-bottom: 1rem; }
+    .block-type-select select {
+      padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px;
+      font-family: inherit; font-size: 0.95rem;
+    }
+    .btn-save-block {
+      padding: 0.6rem 1.5rem; background: var(--accent); color: #fff;
+      border: none; border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 0.95rem;
+    }
+    .btn-save-block:hover { background: #0096b5; }
+    .block-legend {
+      display: flex; gap: 1.5rem; margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-light);
+    }
+    .block-legend span::before {
+      content: ''; display: inline-block; width: 12px; height: 12px;
+      border-radius: 3px; margin-right: 4px; vertical-align: middle;
+    }
+    .block-legend .leg-blocked::before { background: var(--danger); }
+    .block-legend .leg-available::before { background: #e8e8e8; }
+    .save-msg { display: inline-block; margin-left: 1rem; color: var(--success); font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; }
+    .save-msg.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- ログイン画面 -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-box">
+    <h1>SYMMETRY Lab</h1>
+    <p>管理画面にログイン</p>
+    <form onsubmit="doLogin(event)">
+      <input type="password" id="login-key" placeholder="管理キーを入力" autocomplete="off">
+      <button type="submit">ログイン</button>
+    </form>
+    <p class="login-error" id="login-error">管理キーが正しくありません</p>
+  </div>
+</div>
+
+<!-- ヘッダー -->
+<div class="admin-header">
+  <h1>SYMMETRY Lab 管理画面</h1>
+  <div>
+    <a href="index.html" style="margin-right:1rem;">サイトを見る</a>
+    <a href="#" onclick="logout()">ログアウト</a>
+  </div>
+</div>
+
+<!-- メインコンテンツ -->
+<div class="admin-container">
+  <!-- タブ -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('dashboard')">ダッシュボード</button>
+    <button class="tab" onclick="switchTab('bookings')">予約一覧</button>
+    <button class="tab" onclick="switchTab('blocked')">予約不可日設定</button>
+  </div>
+
+  <!-- ダッシュボード -->
+  <div class="tab-content active" id="tab-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">今月の予約件数</div>
+        <div class="value accent" id="stat-monthly-bookings">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">今月の売上</div>
+        <div class="value" id="stat-monthly-revenue">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">累計予約件数</div>
+        <div class="value accent" id="stat-total-bookings">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">累計売上</div>
+        <div class="value" id="stat-total-revenue">-</div>
+      </div>
+    </div>
+
+    <h3 style="margin-bottom:1rem;">最近の予約</h3>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>日時</th><th>研修</th><th>研修日</th><th>氏名</th><th>金額</th><th>状態</th></tr>
+        </thead>
+        <tbody id="recent-bookings"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 予約一覧 -->
+  <div class="tab-content" id="tab-bookings">
+    <div class="table-container">
+      <div class="table-toolbar">
+        <select id="filter-type" onchange="filterBookings()">
+          <option value="">すべての研修</option>
+          <option value="実践スキル研修">実践スキル研修</option>
+          <option value="ケース面接対策（新卒）">ケース面接（新卒）</option>
+          <option value="ケース面接対策（中途）">ケース面接（中途）</option>
+        </select>
+        <input type="text" id="filter-search" placeholder="氏名・メールで検索" oninput="filterBookings()">
+        <button class="btn-export" onclick="exportExcel()">Excel出力</button>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>予約ID</th><th>申込日時</th><th>研修</th><th>研修日</th>
+            <th>氏名</th><th>メール</th><th>電話番号</th><th>会社名</th>
+            <th>金額</th><th>状態</th>
+          </tr>
+        </thead>
+        <tbody id="all-bookings"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 予約不可日設定 -->
+  <div class="tab-content" id="tab-blocked">
+    <div class="block-section">
+      <div class="block-type-select">
+        <label style="font-weight:700;margin-right:0.75rem;">研修種別：</label>
+        <select id="block-type" onchange="loadBlockedDates()">
+          <option value="practical_skills">実践スキル研修</option>
+          <option value="case_interview_new">ケース面接対策（新卒）</option>
+          <option value="case_interview_mid">ケース面接対策（中途）</option>
+        </select>
+      </div>
+
+      <div class="block-calendar">
+        <div class="block-cal-header">
+          <button onclick="changeBlockMonth(-1)">&lt;</button>
+          <span id="block-month-label"></span>
+          <button onclick="changeBlockMonth(1)">&gt;</button>
+        </div>
+        <div class="block-cal-grid" id="block-cal-grid"></div>
+        <div class="block-legend">
+          <span class="leg-blocked">予約不可</span>
+          <span class="leg-available">予約可能</span>
+        </div>
+      </div>
+      <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:1rem;">カレンダーの日付をクリックすると予約不可/可能を切り替えます。変更後は「保存」を押してください。</p>
+      <button class="btn-save-block" onclick="saveBlockedDates()">保存</button>
+      <span class="save-msg" id="save-msg">保存しました</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API_BASE = window.location.origin;
+  let adminKey = '';
+  let allBookings = [];
+  let blockedDatesMap = {};
+  let blockYear, blockMonth;
+  const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
+
+  // --- ログイン ---
+  function doLogin(e) {
+    e.preventDefault();
+    adminKey = document.getElementById('login-key').value;
+    fetch(`${API_BASE}/api/admin/stats?key=${encodeURIComponent(adminKey)}`)
+      .then(res => {
+        if (!res.ok) throw new Error();
+        return res.json();
+      })
+      .then(() => {
+        document.getElementById('login-overlay').classList.add('hidden');
+        sessionStorage.setItem('adminKey', adminKey);
+        loadDashboard();
+      })
+      .catch(() => {
+        document.getElementById('login-error').style.display = 'block';
+      });
+  }
+
+  function logout() {
+    sessionStorage.removeItem('adminKey');
+    adminKey = '';
+    document.getElementById('login-overlay').classList.remove('hidden');
+    document.getElementById('login-key').value = '';
+    document.getElementById('login-error').style.display = 'none';
+  }
+
+  // 自動ログイン
+  (function() {
+    const saved = sessionStorage.getItem('adminKey');
+    if (saved) {
+      adminKey = saved;
+      fetch(`${API_BASE}/api/admin/stats?key=${encodeURIComponent(adminKey)}`)
+        .then(res => { if (!res.ok) throw new Error(); return res.json(); })
+        .then(() => {
+          document.getElementById('login-overlay').classList.add('hidden');
+          loadDashboard();
+        })
+        .catch(() => { sessionStorage.removeItem('adminKey'); });
+    }
+  })();
+
+  // --- タブ切り替え ---
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelector(`[onclick="switchTab('${name}')"]`).classList.add('active');
+    document.getElementById(`tab-${name}`).classList.add('active');
+
+    if (name === 'dashboard') loadDashboard();
+    if (name === 'bookings') loadBookings();
+    if (name === 'blocked') {
+      const now = new Date();
+      blockYear = now.getFullYear();
+      blockMonth = now.getMonth();
+      loadBlockedDates();
+    }
+  }
+
+  // --- ダッシュボード ---
+  async function loadDashboard() {
+    try {
+      const [statsRes, bookingsRes] = await Promise.all([
+        fetch(`${API_BASE}/api/admin/stats?key=${encodeURIComponent(adminKey)}`),
+        fetch(`${API_BASE}/api/bookings?key=${encodeURIComponent(adminKey)}`)
+      ]);
+      const stats = await statsRes.json();
+      const bookings = await bookingsRes.json();
+
+      document.getElementById('stat-monthly-bookings').textContent = stats.monthly_bookings;
+      document.getElementById('stat-monthly-revenue').textContent = formatYen(stats.monthly_revenue);
+      document.getElementById('stat-total-bookings').textContent = stats.total_bookings;
+      document.getElementById('stat-total-revenue').textContent = formatYen(stats.total_revenue);
+
+      const tbody = document.getElementById('recent-bookings');
+      tbody.innerHTML = '';
+      const recent = bookings.slice(0, 5);
+      if (recent.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="no-data">まだ予約がありません</td></tr>';
+        return;
+      }
+      recent.forEach(b => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${formatDateTime(b.created_at)}</td>
+          <td>${b.training_name}</td>
+          <td>${b.training_date}</td>
+          <td>${b.customer_name}</td>
+          <td>${formatYen(b.amount)}</td>
+          <td class="${b.payment_status === 'paid' ? 'status-paid' : 'status-pending'}">${b.payment_status === 'paid' ? '決済済' : '未決済'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // --- 予約一覧 ---
+  async function loadBookings() {
+    try {
+      const res = await fetch(`${API_BASE}/api/bookings?key=${encodeURIComponent(adminKey)}`);
+      allBookings = await res.json();
+      filterBookings();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function filterBookings() {
+    const typeFilter = document.getElementById('filter-type').value;
+    const searchFilter = document.getElementById('filter-search').value.toLowerCase();
+
+    const filtered = allBookings.filter(b => {
+      if (typeFilter && b.training_name !== typeFilter) return false;
+      if (searchFilter) {
+        const match = (b.customer_name || '').toLowerCase().includes(searchFilter)
+          || (b.customer_email || '').toLowerCase().includes(searchFilter);
+        if (!match) return false;
+      }
+      return true;
+    });
+
+    const tbody = document.getElementById('all-bookings');
+    tbody.innerHTML = '';
+    if (filtered.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="10" class="no-data">該当する予約がありません</td></tr>';
+      return;
+    }
+    filtered.forEach(b => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-size:0.75rem;">${(b.booking_id || '').substring(0, 8)}</td>
+        <td>${formatDateTime(b.created_at)}</td>
+        <td>${b.training_name}</td>
+        <td>${b.training_date}</td>
+        <td>${b.customer_name}</td>
+        <td>${b.customer_email}</td>
+        <td>${b.customer_phone || '-'}</td>
+        <td>${b.customer_company || '-'}</td>
+        <td>${formatYen(b.amount)}</td>
+        <td class="${b.payment_status === 'paid' ? 'status-paid' : 'status-pending'}">${b.payment_status === 'paid' ? '決済済' : '未決済'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function exportExcel() {
+    window.open(`${API_BASE}/api/bookings/export?key=${encodeURIComponent(adminKey)}`);
+  }
+
+  // --- ブロック日管理 ---
+  async function loadBlockedDates() {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/blocked-dates?key=${encodeURIComponent(adminKey)}`);
+      const data = await res.json();
+      blockedDatesMap = {};
+      for (const [key, val] of Object.entries(data)) {
+        blockedDatesMap[key] = val.blocked_dates || [];
+      }
+      renderBlockCalendar();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function renderBlockCalendar() {
+    const grid = document.getElementById('block-cal-grid');
+    grid.innerHTML = '';
+    const type = document.getElementById('block-type').value;
+    const blocked = blockedDatesMap[type] || [];
+
+    document.getElementById('block-month-label').textContent = `${blockYear}年${blockMonth + 1}月`;
+
+    DAY_NAMES.forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'dlabel';
+      el.textContent = d;
+      grid.appendChild(el);
+    });
+
+    const firstDay = new Date(blockYear, blockMonth, 1).getDay();
+    const daysInMonth = new Date(blockYear, blockMonth + 1, 0).getDate();
+
+    for (let i = 0; i < firstDay; i++) {
+      grid.appendChild(document.createElement('div'));
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const el = document.createElement('div');
+      const dateStr = `${blockYear}-${String(blockMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      el.className = 'block-cal-cell active';
+      el.textContent = day;
+
+      if (blocked.includes(dateStr)) {
+        el.classList.add('blocked');
+      }
+
+      el.addEventListener('click', () => {
+        const idx = blockedDatesMap[type].indexOf(dateStr);
+        if (idx >= 0) {
+          blockedDatesMap[type].splice(idx, 1);
+        } else {
+          blockedDatesMap[type].push(dateStr);
+        }
+        renderBlockCalendar();
+      });
+
+      grid.appendChild(el);
+    }
+  }
+
+  function changeBlockMonth(delta) {
+    blockMonth += delta;
+    if (blockMonth < 0) { blockMonth = 11; blockYear--; }
+    if (blockMonth > 11) { blockMonth = 0; blockYear++; }
+    renderBlockCalendar();
+  }
+
+  async function saveBlockedDates() {
+    const type = document.getElementById('block-type').value;
+    const blocked = blockedDatesMap[type] || [];
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/blocked-dates?key=${encodeURIComponent(adminKey)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ training_type: type, blocked_dates: blocked })
+      });
+      if (!res.ok) throw new Error();
+      const msg = document.getElementById('save-msg');
+      msg.classList.add('show');
+      setTimeout(() => msg.classList.remove('show'), 2000);
+    } catch (err) {
+      alert('保存に失敗しました');
+    }
+  }
+
+  // --- ユーティリティ ---
+  function formatYen(amount) {
+    return '¥' + Number(amount || 0).toLocaleString();
+  }
+
+  function formatDateTime(dt) {
+    if (!dt) return '-';
+    return dt.replace('T', ' ').substring(0, 16);
+  }
+</script>
+</body>
+</html>

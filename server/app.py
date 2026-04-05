@@ -137,30 +137,32 @@ def load_training_dates():
 
 # --- APIエンドポイント ---
 @app.get("/api/available-dates")
-async def get_available_dates(training_type: str):
+async def get_available_dates(training_type: str, date: str = ""):
     data = load_training_dates()
     training = data.get(training_type)
     if not training:
         raise HTTPException(status_code=404, detail="研修種別が見つかりません")
 
-    available = []
-    today = datetime.now().strftime("%Y-%m-%d")
-    for d in training["dates"]:
-        if d["date"] < today:
-            continue
-        booked = count_bookings_for_date(training_type, d["date"])
-        remaining = training["max_capacity"] - booked
-        if remaining > 0:
-            available.append({
-                "date": d["date"],
-                "label": d["label"],
-                "slots_remaining": remaining
-            })
+    blocked = training.get("blocked_dates", [])
+    time_slots = training.get("time_slots", [])
+
+    if date:
+        if date in blocked or date < datetime.now().strftime("%Y-%m-%d"):
+            return {"time_slots": []}
+        available_slots = []
+        for slot in time_slots:
+            booked = count_bookings_for_date(training_type, f"{date} {slot}")
+            remaining = training["max_capacity"] - booked
+            if remaining > 0:
+                available_slots.append({"time": slot, "slots_remaining": remaining})
+        return {"time_slots": available_slots}
+
     return {
         "training_name": training["name"],
         "price": training["price"],
         "price_label": training["price_label"],
-        "dates": available
+        "time_slots": time_slots,
+        "blocked_dates": blocked,
     }
 
 
@@ -171,19 +173,16 @@ async def create_checkout_session(req: CheckoutRequest):
     if not training:
         raise HTTPException(status_code=400, detail="無効な研修種別です")
 
-    valid_date = any(d["date"] == req.training_date for d in training["dates"])
-    if not valid_date:
-        raise HTTPException(status_code=400, detail="無効な日程です")
+    blocked = training.get("blocked_dates", [])
+    date_part = req.training_date.split(" ")[0] if " " in req.training_date else req.training_date
+    if date_part in blocked:
+        raise HTTPException(status_code=400, detail="この日程は予約できません")
 
     booked = count_bookings_for_date(req.training_type, req.training_date)
     if booked >= training["max_capacity"]:
         raise HTTPException(status_code=400, detail="この日程は定員に達しています")
 
     date_label = req.training_date
-    for d in training["dates"]:
-        if d["date"] == req.training_date:
-            date_label = d["label"]
-            break
 
     try:
         session = stripe.checkout.Session.create(
@@ -300,6 +299,61 @@ async def list_bookings(key: str = ""):
     rows = conn.execute("SELECT * FROM bookings ORDER BY id DESC").fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+
+@app.get("/api/admin/blocked-dates")
+async def get_blocked_dates(key: str = ""):
+    """ブロック日一覧を取得"""
+    if key != ADMIN_KEY:
+        raise HTTPException(status_code=403, detail="認証が必要です")
+    data = load_training_dates()
+    result = {}
+    for t_type, t_data in data.items():
+        result[t_type] = {
+            "name": t_data["name"],
+            "blocked_dates": t_data.get("blocked_dates", []),
+        }
+    return result
+
+
+@app.post("/api/admin/blocked-dates")
+async def update_blocked_dates(request: Request, key: str = ""):
+    """ブロック日を更新"""
+    if key != ADMIN_KEY:
+        raise HTTPException(status_code=403, detail="認証が必要です")
+    body = await request.json()
+    training_type = body.get("training_type", "")
+    blocked = body.get("blocked_dates", [])
+
+    data = load_training_dates()
+    if training_type not in data:
+        raise HTTPException(status_code=400, detail="無効な研修種別です")
+
+    data[training_type]["blocked_dates"] = blocked
+    with open(TRAINING_DATES_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
+    return {"status": "ok"}
+
+
+@app.get("/api/admin/stats")
+async def get_stats(key: str = ""):
+    """ダッシュボード統計"""
+    if key != ADMIN_KEY:
+        raise HTTPException(status_code=403, detail="認証が必要です")
+    conn = get_db()
+    total = conn.execute("SELECT COUNT(*) FROM bookings").fetchone()[0]
+    total_revenue = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM bookings WHERE payment_status = 'paid'").fetchone()[0]
+    this_month = datetime.now().strftime("%Y-%m")
+    monthly = conn.execute("SELECT COUNT(*) FROM bookings WHERE created_at LIKE ?", (f"{this_month}%",)).fetchone()[0]
+    monthly_revenue = conn.execute("SELECT COALESCE(SUM(amount), 0) FROM bookings WHERE payment_status = 'paid' AND created_at LIKE ?", (f"{this_month}%",)).fetchone()[0]
+    conn.close()
+    return {
+        "total_bookings": total,
+        "total_revenue": total_revenue,
+        "monthly_bookings": monthly,
+        "monthly_revenue": monthly_revenue,
+    }
 
 
 @app.get("/api/health")

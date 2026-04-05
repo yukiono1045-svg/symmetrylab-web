@@ -1,33 +1,26 @@
 {
   "practical_skills": {
     "name": "実践スキル研修",
-    "price": 55000,
-    "price_label": "¥55,000（税込）",
+    "price": 15000,
+    "price_label": "¥15,000 / 各日（税込）",
     "max_capacity": 10,
-    "dates": [
-      {"date": "2026-05-15", "start_time": "10:00", "label": "2026年5月15日（金）10:00〜"},
-      {"date": "2026-06-12", "start_time": "10:00", "label": "2026年6月12日（金）10:00〜"},
-      {"date": "2026-07-10", "start_time": "10:00", "label": "2026年7月10日（金）10:00〜"}
-    ]
+    "time_slots": ["10:00", "13:00", "15:00"],
+    "blocked_dates": []
   },
   "case_interview_new": {
     "name": "ケース面接対策（新卒）",
-    "price": 33000,
-    "price_label": "¥33,000（税込）",
+    "price": 7000,
+    "price_label": "¥7,000 / 1時間（税込）",
     "max_capacity": 5,
-    "dates": [
-      {"date": "2026-05-20", "start_time": "14:00", "label": "2026年5月20日（水）14:00〜"},
-      {"date": "2026-06-17", "start_time": "14:00", "label": "2026年6月17日（水）14:00〜"}
-    ]
+    "time_slots": ["18:00", "19:00", "20:00", "21:00", "22:00", "23:00"],
+    "blocked_dates": []
   },
   "case_interview_mid": {
     "name": "ケース面接対策（中途）",
-    "price": 44000,
-    "price_label": "¥44,000（税込）",
+    "price": 7000,
+    "price_label": "¥7,000 / 1時間（税込）",
     "max_capacity": 5,
-    "dates": [
-      {"date": "2026-05-22", "start_time": "14:00", "label": "2026年5月22日（金）14:00〜"},
-      {"date": "2026-06-19", "start_time": "14:00", "label": "2026年6月19日（金）14:00〜"}
-    ]
+    "time_slots": ["18:00", "19:00", "20:00", "21:00", "22:00", "23:00"],
+    "blocked_dates": []
   }
 }

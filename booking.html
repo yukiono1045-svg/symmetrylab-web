@@ -62,31 +62,6 @@
     .modal-body {
       padding: 1.5rem;
     }
-    .date-option {
-      display: block;
-      width: 100%;
-      padding: 0.75rem 1rem;
-      border: 2px solid var(--color-border);
-      border-radius: var(--radius);
-      margin-bottom: 0.5rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      background: #fff;
-      text-align: left;
-      font-family: var(--font-family);
-      font-size: 0.95rem;
-    }
-    .date-option:hover {
-      border-color: var(--color-accent);
-    }
-    .date-option.selected {
-      border-color: var(--color-accent);
-      background: #f0fafe;
-    }
-    .date-option .slots {
-      font-size: 0.8rem;
-      color: var(--color-text-light);
-    }
     .modal-price {
       text-align: center;
       font-size: 1.5rem;
@@ -119,6 +94,135 @@
       text-align: center;
       padding: 2rem;
       color: var(--color-text-light);
+    }
+    /* カレンダースタイル */
+    .calendar {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .calendar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      background: var(--color-primary);
+      color: #fff;
+    }
+    .calendar-header button {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+    }
+    .calendar-header button:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    .calendar-header span {
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0;
+    }
+    .calendar-grid .day-label {
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.5rem 0;
+      background: #f8f9fa;
+      color: var(--color-text-light);
+    }
+    .calendar-grid .day-label:first-child { color: #e74c3c; }
+    .calendar-grid .day-label:last-child { color: #3498db; }
+    .calendar-cell {
+      text-align: center;
+      padding: 0.6rem 0;
+      font-size: 0.9rem;
+      cursor: default;
+      color: #ccc;
+      border-top: 1px solid #f0f0f0;
+    }
+    .calendar-cell.active {
+      color: var(--color-text);
+      cursor: pointer;
+    }
+    .calendar-cell.active:hover {
+      background: #f0fafe;
+    }
+    .calendar-cell.selected {
+      background: var(--color-accent);
+      color: #fff;
+      border-radius: 50%;
+      font-weight: 700;
+    }
+    .calendar-cell.today {
+      font-weight: 700;
+      color: var(--color-accent);
+    }
+    .calendar-cell.today.selected {
+      color: #fff;
+    }
+    .calendar-cell.sunday.active { color: #e74c3c; }
+    .calendar-cell.saturday.active { color: #3498db; }
+    .calendar-cell.sunday.selected, .calendar-cell.saturday.selected { color: #fff; }
+    /* 時間スロットスタイル */
+    .time-slots-section {
+      margin-top: 1rem;
+    }
+    .time-slots-section label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+    .time-slots-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+    .time-slot {
+      padding: 0.6rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 0.95rem;
+      background: #fff;
+      transition: all 0.2s;
+    }
+    .time-slot:hover {
+      border-color: var(--color-accent);
+    }
+    .time-slot.selected {
+      border-color: var(--color-accent);
+      background: #f0fafe;
+      font-weight: 700;
+    }
+    .time-slot .slot-remaining {
+      font-size: 0.7rem;
+      color: var(--color-text-light);
+      display: block;
+    }
+    .time-slots-loading {
+      text-align: center;
+      padding: 1rem;
+      color: var(--color-text-light);
+    }
+    .selected-datetime {
+      background: #f0fafe;
+      border: 1px solid var(--color-accent);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      margin: 1rem 0;
+      text-align: center;
+      font-weight: 700;
+      color: var(--color-primary);
     }
   </style>
 </head>
@@ -174,8 +278,8 @@
               <li>Day2：BDD実践</li>
               <li>Day3：事業計画策定ハンズオン</li>
             </ul>
-            <p style="font-size:1.5rem;font-weight:700;margin:1.5rem 0 0.5rem;">¥55,000<span style="font-size:0.9rem;font-weight:400;">（税込）</span></p>
-            <p class="text-small text-light">テキスト・演習資料込み</p>
+            <p style="font-size:1.5rem;font-weight:700;margin:1.5rem 0 0.5rem;">¥15,000<span style="font-size:0.9rem;font-weight:400;"> / 各日（税込）</span></p>
+            <p class="text-small text-light">各日テキスト・演習資料込み</p>
             <button class="btn-primary" style="margin-top:1rem;" data-training-type="practical_skills" onclick="openBookingModal(this)">この研修に申し込む</button>
           </div>
         </div>
@@ -192,7 +296,7 @@
               <li>フェルミ推定の解法</li>
               <li>模擬面接3回付き</li>
             </ul>
-            <p style="font-size:1.5rem;font-weight:700;margin:1.5rem 0 0.5rem;">¥33,000<span style="font-size:0.9rem;font-weight:400;">（税込）</span></p>
+            <p style="font-size:1.5rem;font-weight:700;margin:1.5rem 0 0.5rem;">¥7,000<span style="font-size:0.9rem;font-weight:400;"> / 1時間（税込）</span></p>
             <p class="text-small text-light">個別フィードバック付き</p>
             <button class="btn-primary" style="margin-top:1rem;" data-training-type="case_interview_new" onclick="openBookingModal(this)">この講座に申し込む</button>
           </div>
@@ -210,7 +314,7 @@
               <li>高度なケース解法</li>
               <li>模擬面接3回付き</li>
             </ul>
-            <p style="font-size:1.5rem;font-weight:700;margin:1.5rem 0 0.5rem;">¥44,000<span style="font-size:0.9rem;font-weight:400;">（税込）</span></p>
+            <p style="font-size:1.5rem;font-weight:700;margin:1.5rem 0 0.5rem;">¥7,000<span style="font-size:0.9rem;font-weight:400;"> / 1時間（税込）</span></p>
             <p class="text-small text-light">個別フィードバック付き</p>
             <button class="btn-primary" style="margin-top:1rem;" data-training-type="case_interview_mid" onclick="openBookingModal(this)">この講座に申し込む</button>
           </div>
@@ -238,18 +342,34 @@
       <div class="modal-body">
         <div id="modal-loading" style="text-align:center;padding:2rem;">
           <div class="loading-spinner" style="width:32px;height:32px;border-width:4px;border-color:rgba(0,180,216,0.2);border-top-color:var(--color-accent);"></div>
-          <p style="margin-top:1rem;color:var(--color-text-light);">日程を取得中...</p>
+          <p style="margin-top:1rem;color:var(--color-text-light);">読み込み中...</p>
         </div>
 
         <form id="booking-form" style="display:none;" onsubmit="submitBooking(event)">
           <input type="hidden" id="booking-training-type" name="training_type">
           <input type="hidden" id="booking-training-date" name="training_date">
 
-          <!-- 日程選択 -->
+          <!-- カレンダー日付選択 -->
           <div class="form-group">
             <label>ご希望の日程 <span class="required">*必須</span></label>
-            <div id="date-options"></div>
+            <div class="calendar">
+              <div class="calendar-header">
+                <button type="button" onclick="changeMonth(-1)">&lt;</button>
+                <span id="calendar-month-label"></span>
+                <button type="button" onclick="changeMonth(1)">&gt;</button>
+              </div>
+              <div class="calendar-grid" id="calendar-grid"></div>
+            </div>
           </div>
+
+          <!-- 時間スロット選択 -->
+          <div class="time-slots-section" id="time-slots-section" style="display:none;">
+            <label>ご希望の時間 <span class="required">*必須</span></label>
+            <div id="time-slots-container"></div>
+          </div>
+
+          <!-- 選択結果表示 -->
+          <div class="selected-datetime" id="selected-datetime" style="display:none;"></div>
 
           <div class="modal-price" id="modal-price"></div>
 
@@ -278,8 +398,7 @@
         </form>
 
         <div id="modal-no-dates" class="no-dates" style="display:none;">
-          <p>現在、ご予約可能な日程がございません。</p>
-          <p>新しい日程が公開されるまでお待ちください。</p>
+          <p>エラーが発生しました。</p>
           <a href="contact.html" class="btn-outline" style="margin-top:1rem;">お問い合わせ</a>
         </div>
       </div>
@@ -317,6 +436,7 @@
             <a href="contact.html">お問い合わせ</a>
             <a href="privacy.html">プライバシーポリシー</a>
             <a href="tokushoho.html">特定商取引法に基づく表記</a>
+            <a href="admin.html" style="font-size:0.75rem;opacity:0.5;">管理</a>
           </div>
         </div>
       </div>
@@ -330,6 +450,11 @@
   <script>
     const API_BASE = window.location.origin;
     let selectedDate = null;
+    let selectedTime = null;
+    let currentYear, currentMonth;
+    let currentTrainingType = '';
+    let blockedDates = [];
+    const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
 
     // 決済完了後: session_idがURLにあればExcelに記録
     (async () => {
@@ -346,65 +471,174 @@
     })();
 
     async function openBookingModal(btn) {
-      const trainingType = btn.dataset.trainingType;
+      currentTrainingType = btn.dataset.trainingType;
       const modal = document.getElementById('booking-modal');
       const form = document.getElementById('booking-form');
       const loading = document.getElementById('modal-loading');
       const noDates = document.getElementById('modal-no-dates');
 
-      // リセット
       form.style.display = 'none';
       loading.style.display = 'block';
       noDates.style.display = 'none';
       selectedDate = null;
-      document.getElementById('booking-training-type').value = trainingType;
+      selectedTime = null;
+      document.getElementById('booking-training-type').value = currentTrainingType;
       document.getElementById('booking-training-date').value = '';
+      document.getElementById('time-slots-section').style.display = 'none';
+      document.getElementById('selected-datetime').style.display = 'none';
 
       modal.classList.add('active');
       document.body.style.overflow = 'hidden';
 
       try {
-        const res = await fetch(`${API_BASE}/api/available-dates?training_type=${trainingType}`);
-        if (!res.ok) throw new Error('日程の取得に失敗しました');
+        const res = await fetch(`${API_BASE}/api/available-dates?training_type=${currentTrainingType}`);
+        if (!res.ok) throw new Error('情報の取得に失敗しました');
         const data = await res.json();
 
         document.getElementById('modal-title').textContent = data.training_name + ' お申し込み';
-        document.getElementById('modal-price').innerHTML = data.price_label + '<span>（税込）</span>';
+        document.getElementById('modal-price').innerHTML = data.price_label;
+        blockedDates = data.blocked_dates || [];
 
-        const dateContainer = document.getElementById('date-options');
-        dateContainer.innerHTML = '';
-
-        if (data.dates.length === 0) {
-          loading.style.display = 'none';
-          noDates.style.display = 'block';
-          return;
-        }
-
-        data.dates.forEach(d => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'date-option';
-          btn.innerHTML = `${d.label} <span class="slots">残り${d.slots_remaining}席</span>`;
-          btn.dataset.date = d.date;
-          btn.addEventListener('click', () => selectDate(btn, d.date));
-          dateContainer.appendChild(btn);
-        });
+        const now = new Date();
+        currentYear = now.getFullYear();
+        currentMonth = now.getMonth();
+        renderCalendar();
 
         loading.style.display = 'none';
         form.style.display = 'block';
       } catch (err) {
         loading.style.display = 'none';
         noDates.style.display = 'block';
-        noDates.querySelector('p').textContent = 'エラーが発生しました。サーバーが起動しているか確認してください。';
         console.error(err);
       }
     }
 
-    function selectDate(btn, date) {
-      document.querySelectorAll('.date-option').forEach(b => b.classList.remove('selected'));
+    function renderCalendar() {
+      const grid = document.getElementById('calendar-grid');
+      grid.innerHTML = '';
+
+      document.getElementById('calendar-month-label').textContent =
+        `${currentYear}年${currentMonth + 1}月`;
+
+      DAY_NAMES.forEach(d => {
+        const el = document.createElement('div');
+        el.className = 'day-label';
+        el.textContent = d;
+        grid.appendChild(el);
+      });
+
+      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      for (let i = 0; i < firstDay; i++) {
+        const el = document.createElement('div');
+        el.className = 'calendar-cell';
+        grid.appendChild(el);
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const el = document.createElement('div');
+        const date = new Date(currentYear, currentMonth, day);
+        const dateStr = formatDate(currentYear, currentMonth, day);
+        const dayOfWeek = date.getDay();
+
+        el.className = 'calendar-cell';
+        el.textContent = day;
+
+        if (dayOfWeek === 0) el.classList.add('sunday');
+        if (dayOfWeek === 6) el.classList.add('saturday');
+
+        const isToday = date.getTime() === today.getTime();
+        if (isToday) el.classList.add('today');
+
+        const isBlocked = blockedDates.includes(dateStr);
+        const isPast = date < today;
+
+        if (!isPast && !isBlocked) {
+          el.classList.add('active');
+          el.addEventListener('click', () => selectCalendarDate(el, dateStr));
+        }
+
+        if (selectedDate === dateStr) {
+          el.classList.add('selected');
+        }
+
+        grid.appendChild(el);
+      }
+    }
+
+    function formatDate(year, month, day) {
+      return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+
+    function changeMonth(delta) {
+      currentMonth += delta;
+      if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+      if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+      renderCalendar();
+    }
+
+    async function selectCalendarDate(el, dateStr) {
+      document.querySelectorAll('.calendar-cell').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      selectedDate = dateStr;
+      selectedTime = null;
+      document.getElementById('booking-training-date').value = '';
+      document.getElementById('selected-datetime').style.display = 'none';
+
+      const section = document.getElementById('time-slots-section');
+      const container = document.getElementById('time-slots-container');
+      section.style.display = 'block';
+      container.innerHTML = '<div class="time-slots-loading">時間を取得中...</div>';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/available-dates?training_type=${currentTrainingType}&date=${dateStr}`);
+        const data = await res.json();
+
+        container.innerHTML = '';
+
+        if (!data.time_slots || data.time_slots.length === 0) {
+          container.innerHTML = '<p style="text-align:center;color:var(--color-text-light);padding:0.5rem;">この日は予約可能な時間がありません</p>';
+          return;
+        }
+
+        const grid = document.createElement('div');
+        grid.className = 'time-slots-grid';
+
+        data.time_slots.forEach(slot => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'time-slot';
+          btn.innerHTML = `${slot.time}<span class="slot-remaining">残り${slot.slots_remaining}席</span>`;
+          btn.addEventListener('click', () => selectTimeSlot(btn, slot.time));
+          grid.appendChild(btn);
+        });
+
+        container.appendChild(grid);
+      } catch (err) {
+        container.innerHTML = '<p style="text-align:center;color:#e74c3c;">時間の取得に失敗しました</p>';
+        console.error(err);
+      }
+    }
+
+    function selectTimeSlot(btn, time) {
+      document.querySelectorAll('.time-slot').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
-      selectedDate = date;
-      document.getElementById('booking-training-date').value = date;
+      selectedTime = time;
+
+      const dateValue = `${selectedDate} ${time}`;
+      document.getElementById('booking-training-date').value = dateValue;
+
+      const d = new Date(selectedDate);
+      const dayName = DAY_NAMES[d.getDay()];
+      const parts = selectedDate.split('-');
+      const display = `${parts[0]}年${parseInt(parts[1])}月${parseInt(parts[2])}日（${dayName}）${time}〜`;
+
+      const el = document.getElementById('selected-datetime');
+      el.textContent = display;
+      el.style.display = 'block';
     }
 
     function closeBookingModal() {
@@ -412,7 +646,6 @@
       document.body.style.overflow = '';
     }
 
-    // モーダル外クリックで閉じる
     document.getElementById('booking-modal').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) closeBookingModal();
     });
@@ -420,8 +653,8 @@
     async function submitBooking(e) {
       e.preventDefault();
 
-      if (!selectedDate) {
-        alert('日程を選択してください。');
+      if (!selectedDate || !selectedTime) {
+        alert('日程と時間を選択してください。');
         return;
       }
 
