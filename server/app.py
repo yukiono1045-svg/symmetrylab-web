@@ -1,12 +1,16 @@
 """
 SYMMETRY Lab 予約・決済サーバー（本番対応版）
-FastAPI + Stripe Checkout + SQLite + Excel出力
+FastAPI + Stripe Checkout + SQLite + Excel出力 + メール通知
 """
 
 import json
 import os
+import smtplib
 import sqlite3
+import traceback
 from datetime import datetime
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from io import BytesIO
 from pathlib import Path
 
@@ -28,6 +32,11 @@ ADMIN_KEY = os.getenv("ADMIN_KEY", "symmetry-admin-2026")
 DB_PATH = os.getenv("DB_PATH", "bookings.db")
 TRAINING_DATES_PATH = Path(__file__).parent / "training_dates.json"
 
+# --- メール設定 ---
+SMTP_EMAIL = os.getenv("SMTP_EMAIL", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", SMTP_EMAIL)
+
 app = FastAPI(title="SYMMETRY Lab Booking API")
 
 app.add_middleware(
@@ -46,6 +55,7 @@ class CheckoutRequest(BaseModel):
     customer_email: str
     customer_phone: str = ""
     customer_company: str = ""
+    sessions: int = 1
 
 
 # --- SQLite ---
@@ -135,6 +145,134 @@ def load_training_dates():
         return json.load(f)
 
 
+# --- メール送信 ---
+def send_email(to_email: str, subject: str, html_body: str):
+    """Gmail SMTP でメール送信"""
+    if not SMTP_EMAIL or not SMTP_PASSWORD:
+        print(f"[メール] SMTP未設定のためスキップ: {subject} → {to_email}")
+        return False
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["From"] = f"SYMMETRY Lab <{SMTP_EMAIL}>"
+        msg["To"] = to_email
+        msg["Subject"] = subject
+        msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+        smtp_host = os.getenv("SMTP_HOST", "smtp.office365.com")
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            server.starttls()
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
+
+        print(f"[メール送信成功] {subject} → {to_email}")
+        return True
+    except Exception as e:
+        print(f"[メール送信失敗] {subject} → {to_email}: {e}")
+        traceback.print_exc()
+        return False
+
+
+def send_booking_confirmation(metadata: dict, amount: int):
+    """予約確認メールを顧客に送信"""
+    customer_name = metadata.get("customer_name", "")
+    customer_email = metadata.get("customer_email", "")
+    training_name = metadata.get("training_name", "")
+    training_date = metadata.get("training_date", "")
+    sessions = metadata.get("sessions", "1")
+
+    if not customer_email:
+        return
+
+    subject = f"【SYMMETRY Lab】{training_name} お申込み確認"
+
+    html = f"""
+    <div style="max-width:600px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;color:#1F2937;line-height:1.8;">
+      <div style="border-top:3px solid #0ABAB5;padding:40px 32px;">
+        <h1 style="font-size:20px;font-weight:700;color:#1F2937;margin:0 0 8px;">
+          お申込みありがとうございます
+        </h1>
+        <p style="font-size:13px;color:#6B7280;margin:0 0 32px;">
+          SYMMETRY Lab株式会社
+        </p>
+
+        <p style="font-size:15px;">
+          {customer_name} 様<br><br>
+          この度は <strong>{training_name}</strong> にお申込みいただき、誠にありがとうございます。<br>
+          以下の内容でご予約を承りました。
+        </p>
+
+        <div style="background:#F9FAFB;border-left:3px solid #0ABAB5;padding:20px 24px;margin:28px 0;border-radius:2px;">
+          <table style="width:100%;font-size:14px;border-collapse:collapse;">
+            <tr>
+              <td style="padding:8px 0;color:#6B7280;width:140px;">プログラム</td>
+              <td style="padding:8px 0;font-weight:600;">{training_name}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;color:#6B7280;">日程</td>
+              <td style="padding:8px 0;font-weight:600;">{training_date}</td>
+            </tr>
+            <tr>
+              <td style="padding:8px 0;color:#6B7280;">セッション数</td>
+              <td style="padding:8px 0;font-weight:600;">{sessions}回</td>
+            </tr>
+            <tr style="border-top:1px solid #E5E7EB;">
+              <td style="padding:12px 0 8px;color:#6B7280;">お支払い金額</td>
+              <td style="padding:12px 0 8px;font-weight:700;font-size:18px;color:#0ABAB5;">
+                ¥{amount:,}
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <h2 style="font-size:15px;font-weight:700;color:#1F2937;margin:32px 0 12px;">
+          今後の流れ
+        </h2>
+        <ol style="font-size:14px;padding-left:20px;color:#4B5563;">
+          <li style="margin-bottom:8px;">本メールで予約内容をご確認ください</li>
+          <li style="margin-bottom:8px;">セッション当日、Zoomリンクをメールでお送りします</li>
+          <li style="margin-bottom:8px;">お時間になりましたらZoomにてご参加ください</li>
+        </ol>
+
+        <p style="font-size:14px;color:#4B5563;margin-top:28px;">
+          ご不明点がございましたら、お気軽にご連絡ください。<br>
+          お会いできることを楽しみにしております。
+        </p>
+
+        <div style="border-top:1px solid #E5E7EB;margin-top:40px;padding-top:20px;">
+          <p style="font-size:12px;color:#9CA3AF;margin:0;">
+            SYMMETRY Lab株式会社<br>
+            Email: {SMTP_EMAIL}<br>
+            Web: https://symmetrylab.jp
+          </p>
+        </div>
+      </div>
+    </div>
+    """
+
+    send_email(customer_email, subject, html)
+
+    # 管理者にも通知
+    admin_subject = f"[新規予約] {customer_name}様 - {training_name} ({training_date})"
+    admin_html = f"""
+    <div style="font-family:sans-serif;font-size:14px;color:#333;line-height:1.8;">
+      <h2 style="color:#0ABAB5;">新規予約通知</h2>
+      <table style="border-collapse:collapse;">
+        <tr><td style="padding:4px 16px 4px 0;color:#888;">氏名</td><td><strong>{customer_name}</strong></td></tr>
+        <tr><td style="padding:4px 16px 4px 0;color:#888;">メール</td><td>{customer_email}</td></tr>
+        <tr><td style="padding:4px 16px 4px 0;color:#888;">電話</td><td>{metadata.get('customer_phone', '')}</td></tr>
+        <tr><td style="padding:4px 16px 4px 0;color:#888;">プログラム</td><td>{training_name}</td></tr>
+        <tr><td style="padding:4px 16px 4px 0;color:#888;">日程</td><td>{training_date}</td></tr>
+        <tr><td style="padding:4px 16px 4px 0;color:#888;">セッション数</td><td>{sessions}回</td></tr>
+        <tr><td style="padding:4px 16px 4px 0;color:#888;">金額</td><td><strong>¥{amount:,}</strong></td></tr>
+      </table>
+    </div>
+    """
+    if ADMIN_EMAIL:
+        send_email(ADMIN_EMAIL, admin_subject, admin_html)
+
+
 # --- APIエンドポイント ---
 @app.get("/api/available-dates")
 async def get_available_dates(training_type: str, date: str = ""):
@@ -184,6 +322,12 @@ async def create_checkout_session(req: CheckoutRequest):
 
     date_label = req.training_date
 
+    qty = max(1, int(req.sessions))
+    total_price = training["price"] * qty
+    name_with_qty = f"{training['name']} - {date_label}"
+    if qty > 1:
+        name_with_qty += f"（{qty}セッション）"
+
     try:
         session = stripe.checkout.Session.create(
             payment_method_types=["card"],
@@ -191,16 +335,16 @@ async def create_checkout_session(req: CheckoutRequest):
                 "price_data": {
                     "currency": "jpy",
                     "product_data": {
-                        "name": f"{training['name']} - {date_label}",
+                        "name": name_with_qty,
                         "description": f"SYMMETRY Lab {training['name']}"
                     },
                     "unit_amount": training["price"],
                 },
-                "quantity": 1,
+                "quantity": qty,
             }],
             mode="payment",
             success_url=f"{BASE_URL}/booking.html?success=true&session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{BASE_URL}/booking.html?canceled=true",
+            cancel_url=f"{BASE_URL}/lp-case.html?canceled=true",
             customer_email=req.customer_email,
             metadata={
                 "training_type": req.training_type,
@@ -210,7 +354,8 @@ async def create_checkout_session(req: CheckoutRequest):
                 "customer_email": req.customer_email,
                 "customer_phone": req.customer_phone,
                 "customer_company": req.customer_company,
-                "price": str(training["price"]),
+                "price": str(total_price),
+                "sessions": str(qty),
             }
         )
         return {"checkout_url": session.url}
@@ -242,6 +387,11 @@ async def confirm_booking(session_id: str):
         }
         save_booking(session_data)
         print(f"[予約確認] session_id={session_id} -> DB記録完了")
+
+        # 確認メール送信
+        amount = session_data.get("amount_total", 0)
+        send_booking_confirmation(session_data["metadata"], amount)
+
         return {"status": "ok", "message": "予約を記録しました"}
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=f"セッション情報の取得に失敗: {str(e)}")
