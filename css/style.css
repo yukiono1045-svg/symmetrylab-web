@@ -120,9 +120,10 @@ p {
   background: #FFFFFF;
 }
 
-/* Programs / Why セクションをフルスクリーンに */
+/* Programs / Why / Mission セクションをフルスクリーンに */
 .section-programs > .container,
-.section-why > .container {
+.section-why > .container,
+.section-mission > .container {
   min-height: calc(100vh - 64px - 24px);
   display: flex;
   flex-direction: column;
@@ -141,7 +142,8 @@ p {
   .section { padding: 12px 12px; }
   .section > .container { padding: 48px 28px; border-radius: 16px; }
   .section-programs > .container,
-  .section-why > .container { min-height: auto; }
+  .section-why > .container,
+  .section-mission > .container { min-height: auto; }
 }
 
 .section-dark {
