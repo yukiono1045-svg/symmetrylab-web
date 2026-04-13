@@ -641,7 +641,18 @@ p {
 .strength-item h3 {
   font-size: 1.25rem;
   margin-bottom: 1rem;
-  white-space: nowrap;
+}
+
+@media (max-width: 1400px) {
+  .strength-item h3 { font-size: 1.1rem; }
+  .strength-item p { font-size: 1rem; }
+  .strength-item { padding: 2rem; }
+  .strength-num { font-size: 42px; }
+}
+
+@media (max-width: 1100px) {
+  .grid-3 { grid-template-columns: 1fr; }
+  .strength-item h3 { font-size: 1.25rem; }
 }
 
 .strength-item p {
