@@ -480,7 +480,7 @@ p {
 
 .hero-image img {
   width: 100%;
-  max-width: 720px;
+  max-width: 100%;
   height: auto;
   border-radius: 16px;
   box-shadow: 0 8px 32px rgba(17, 24, 39, 0.12);
