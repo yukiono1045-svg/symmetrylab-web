@@ -447,10 +447,10 @@ p {
 }
 
 .hero > .container {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+  background: #FFFFFF;
   border-radius: 24px;
   padding: 80px 160px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 10px 40px rgba(17, 24, 39, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 10px 40px rgba(17, 24, 39, 0.05);
   max-width: 1800px;
   position: relative;
   overflow: hidden;
@@ -459,12 +459,12 @@ p {
 .hero > .container::after {
   content: '';
   position: absolute;
-  top: -50%;
-  right: -20%;
+  top: -200px;
+  right: -200px;
   width: 600px;
   height: 600px;
-  background: rgba(10, 186, 181, 0.08);
-  border-radius: 50%;
+  background: radial-gradient(circle, var(--color-tiffany-bg) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 @media (max-width: 1400px) {
@@ -501,7 +501,7 @@ p {
 }
 
 .hero h1 {
-  color: var(--color-white);
+  color: var(--color-primary);
   font-size: 2.4rem;
   font-weight: 800;
   margin-bottom: 1.5rem;
@@ -513,7 +513,7 @@ p {
 
 .hero p {
   font-size: 1.05rem;
-  opacity: 0.9;
+  color: var(--color-text-light);
   max-width: 640px;
   margin-bottom: 2.5rem;
   position: relative;
