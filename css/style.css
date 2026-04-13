@@ -37,7 +37,7 @@
 }
 
 html {
-  font-size: 16px;
+  font-size: 17px;
   scroll-behavior: smooth;
 }
 
@@ -78,10 +78,10 @@ h1, h2, h3, h4 {
   line-height: 1.4;
 }
 
-h1 { font-size: 2.25rem; }
-h2 { font-size: 1.75rem; margin-bottom: 1rem; }
-h3 { font-size: 1.25rem; margin-bottom: 0.75rem; }
-h4 { font-size: 1.1rem; }
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; margin-bottom: 1rem; }
+h3 { font-size: 1.35rem; margin-bottom: 0.75rem; }
+h4 { font-size: 1.15rem; }
 
 p {
   margin-bottom: 1rem;
@@ -150,8 +150,9 @@ p {
 
 .section-header p {
   color: var(--color-text-light);
-  max-width: 600px;
+  max-width: 700px;
   margin: 0.5rem auto 0;
+  font-size: 1.05rem;
 }
 
 .grid-2 {
@@ -224,8 +225,8 @@ p {
 
 .nav-links a {
   color: var(--color-text);
-  font-size: 0.9rem;
-  font-weight: 400;
+  font-size: 0.95rem;
+  font-weight: 500;
   transition: color var(--transition);
 }
 
@@ -328,10 +329,10 @@ p {
   display: inline-block;
   background: var(--color-accent);
   color: var(--color-white);
-  padding: 0.75rem 2rem;
+  padding: 0.85rem 2.25rem;
   border-radius: var(--radius);
-  font-weight: 700;
-  font-size: 0.95rem;
+  font-weight: 600;
+  font-size: 1rem;
   border: 2px solid var(--color-accent);
   cursor: pointer;
   transition: all var(--transition);
@@ -348,10 +349,10 @@ p {
   display: inline-block;
   background: transparent;
   color: var(--color-accent);
-  padding: 0.75rem 2rem;
+  padding: 0.85rem 2.25rem;
   border-radius: var(--radius);
-  font-weight: 700;
-  font-size: 0.95rem;
+  font-weight: 600;
+  font-size: 1rem;
   border: 2px solid var(--color-accent);
   cursor: pointer;
   transition: all var(--transition);
