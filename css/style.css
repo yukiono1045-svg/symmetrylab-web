@@ -120,6 +120,14 @@ p {
   background: #FFFFFF;
 }
 
+/* Programs セクションをフルスクリーンに */
+.section-programs > .container {
+  min-height: calc(100vh - 64px - 24px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 @media (max-width: 1400px) {
   .section > .container { padding: 72px 100px; }
 }
@@ -131,6 +139,7 @@ p {
 @media (max-width: 768px) {
   .section { padding: 12px 12px; }
   .section > .container { padding: 48px 28px; border-radius: 16px; }
+  .section-programs > .container { min-height: auto; }
 }
 
 .section-dark {
@@ -724,7 +733,7 @@ p {
 }
 
 .service-card-header {
-  background: var(--color-primary);
+  background: var(--color-tiffany);
   color: var(--color-white);
   padding: 1rem 1.5rem;
 }
@@ -735,7 +744,21 @@ p {
 }
 
 .service-card-body {
-  padding: 1.25rem 1.5rem;
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.service-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.service-card-body .btn-primary,
+.service-card-body .btn-outline {
+  margin-top: auto;
+  align-self: flex-start;
 }
 
 .service-card-body ul {
