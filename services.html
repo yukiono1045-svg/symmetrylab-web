@@ -100,7 +100,7 @@
         <h3>料金</h3>
         <p style="font-size:1.5rem;font-weight:300;margin:0.5rem 0;font-family:'Inter',sans-serif;">¥15,000 <span style="font-size:0.85rem;font-weight:400;color:var(--color-text-light);">/ 各日（税込）</span></p>
         <p class="text-small text-light" style="margin-top:0.75rem;">各日テキスト・演習資料込み</p>
-        <a href="booking.html" class="btn-primary" style="margin-top:1rem;display:inline-block;">研修に申し込む</a>
+        <button class="btn-primary" style="margin-top:1rem;display:inline-block;" onclick="openTrainingModal()">研修に申し込む</button>
       </div>
     </div>
   </section>
@@ -141,6 +141,204 @@
     </div>
   </footer>
 
+  <!-- 予約モーダル -->
+  <div class="modal-overlay" id="trainingModal" style="display:none;position:fixed;inset:0;background:rgba(17,24,39,0.6);backdrop-filter:blur(4px);z-index:9999;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto;">
+    <div style="background:#fff;border-radius:16px;max-width:560px;width:100%;box-shadow:0 30px 80px rgba(0,0,0,0.3);border-top:3px solid var(--color-tiffany);animation:modalIn 0.3s ease;">
+      <div style="padding:28px 32px 20px;border-bottom:1px solid var(--color-border);display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-size:10px;font-weight:600;letter-spacing:0.2em;color:var(--color-tiffany-dark);margin-bottom:6px;font-family:'Inter',sans-serif;">APPLY NOW</div>
+          <h3 style="font-size:20px;font-weight:700;color:var(--color-primary);margin:0;">実践スキル研修 お申し込み</h3>
+        </div>
+        <button onclick="closeTrainingModal()" style="background:none;border:none;font-size:28px;color:var(--color-text-light);cursor:pointer;padding:0 4px;line-height:1;">&times;</button>
+      </div>
+      <div style="padding:24px 32px 32px;">
+        <div id="tModalLoading" style="text-align:center;padding:48px 0;color:var(--color-text-light);font-size:13px;">
+          <div style="display:inline-block;width:36px;height:36px;border:3px solid var(--color-border);border-top-color:var(--color-tiffany);border-radius:50%;animation:spin 0.8s linear infinite;margin-bottom:12px;"></div>
+          <p>読み込み中...</p>
+        </div>
+
+        <div id="tModalContent" style="display:none;">
+          <div style="background:var(--color-bg-alt);border-left:2px solid var(--color-tiffany);padding:14px 18px;margin-bottom:20px;border-radius:2px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;">
+              <span style="color:var(--color-text-light);">プログラム</span>
+              <span style="color:var(--color-primary);font-weight:600;" id="tModalName">実践スキル研修</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-top:1px solid var(--color-border);margin-top:4px;padding-top:8px;">
+              <span style="color:var(--color-text-light);">料金</span>
+              <span style="font-size:22px;font-weight:300;color:var(--color-tiffany-dark);font-family:'Inter',sans-serif;">¥15,000</span>
+            </div>
+          </div>
+
+          <div style="margin-bottom:20px;">
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--color-text-light);margin-bottom:10px;letter-spacing:0.08em;text-transform:uppercase;">ご希望の日程 <span style="color:var(--color-tiffany-dark);font-size:10px;margin-left:6px;">● 必須</span></label>
+            <div style="border:1px solid var(--color-border);border-radius:8px;overflow:hidden;">
+              <div id="tCalendarHeader" style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--color-primary);color:#fff;">
+                <button type="button" onclick="tChangeMonth(-1)" style="background:none;border:1px solid rgba(255,255,255,0.2);color:#fff;width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:16px;">‹</button>
+                <span id="tCalMonthLabel" style="font-weight:600;font-size:14px;"></span>
+                <button type="button" onclick="tChangeMonth(1)" style="background:none;border:1px solid rgba(255,255,255,0.2);color:#fff;width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:16px;">›</button>
+              </div>
+              <div id="tCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);"></div>
+            </div>
+          </div>
+
+          <div id="tTimeSlotsSection" style="display:none;margin-bottom:20px;">
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--color-text-light);margin-bottom:10px;letter-spacing:0.08em;text-transform:uppercase;">ご希望の時間 <span style="color:var(--color-tiffany-dark);font-size:10px;margin-left:6px;">● 必須</span></label>
+            <div id="tTimeSlotsContainer"></div>
+          </div>
+
+          <div id="tSelectedDatetime" style="display:none;background:var(--color-tiffany-bg);border-left:2px solid var(--color-tiffany);padding:12px 18px;font-size:13px;font-weight:600;color:var(--color-tiffany-dark);margin-bottom:20px;"></div>
+
+          <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--color-text-light);margin-bottom:6px;letter-spacing:0.08em;">お名前 <span style="color:var(--color-tiffany-dark);font-size:10px;">● 必須</span></label>
+            <input type="text" id="tName" required placeholder="山田 太郎" style="width:100%;padding:10px 14px;border:1px solid var(--color-border);border-radius:2px;font-size:14px;font-family:inherit;">
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--color-text-light);margin-bottom:6px;letter-spacing:0.08em;">メールアドレス <span style="color:var(--color-tiffany-dark);font-size:10px;">● 必須</span></label>
+            <input type="email" id="tEmail" required placeholder="example@email.com" style="width:100%;padding:10px 14px;border:1px solid var(--color-border);border-radius:2px;font-size:14px;font-family:inherit;">
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--color-text-light);margin-bottom:6px;letter-spacing:0.08em;">電話番号</label>
+            <input type="tel" id="tPhone" placeholder="090-1234-5678" style="width:100%;padding:10px 14px;border:1px solid var(--color-border);border-radius:2px;font-size:14px;font-family:inherit;">
+          </div>
+
+          <button type="button" id="tSubmitBtn" disabled onclick="submitTrainingBooking()" style="width:100%;background:var(--color-border);color:var(--color-text-light);border:none;padding:18px;border-radius:4px;font-size:14px;font-weight:600;letter-spacing:0.08em;cursor:not-allowed;transition:all 0.3s;">
+            日程を選択してください
+          </button>
+          <p style="text-align:center;font-size:11px;color:var(--color-text-light);margin-top:12px;">Stripeの安全な決済画面に移動します</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes modalIn { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .t-day-label{text-align:center;font-size:11px;font-weight:600;padding:10px 0;background:var(--color-bg-alt);color:var(--color-text-light);letter-spacing:0.05em;}
+    .t-day-label:first-child{color:#DC2626} .t-day-label:last-child{color:#2563EB}
+    .t-cell{text-align:center;padding:12px 0;font-size:13px;cursor:default;color:var(--color-border);border-top:1px solid var(--color-bg-alt);}
+    .t-cell.active{color:var(--color-primary);cursor:pointer;font-weight:500;}
+    .t-cell.active:hover{background:var(--color-tiffany-bg);color:var(--color-tiffany-dark);}
+    .t-cell.selected{background:var(--color-tiffany);color:#fff;font-weight:700;}
+    .t-cell.sunday.active{color:#DC2626} .t-cell.saturday.active{color:#2563EB}
+    .t-cell.sunday.selected,.t-cell.saturday.selected{color:#fff}
+    .t-slot{padding:12px 8px;border:1px solid var(--color-border);border-radius:6px;background:#fff;cursor:pointer;text-align:center;transition:all 0.2s;font-family:inherit;}
+    .t-slot:hover{border-color:var(--color-tiffany);background:var(--color-tiffany-bg);}
+    .t-slot.selected{border-color:var(--color-tiffany);background:var(--color-tiffany);color:#fff;}
+    .t-slot .t-time{display:block;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;}
+    .t-slot.selected .t-time{color:#fff}
+    .t-slot .t-remaining{display:block;font-size:10px;color:var(--color-text-light);margin-top:2px;}
+    .t-slot.selected .t-remaining{color:rgba(255,255,255,0.85)}
+  </style>
+
   <script src="js/main.js"></script>
+  <script>
+    const T_API = window.location.origin;
+    const T_TYPE = 'practical_skills';
+    let tSelectedDate = null, tSelectedTime = null;
+    let tYear, tMonth, tBlocked = [];
+    const T_DAYS = ['日','月','火','水','木','金','土'];
+
+    function openTrainingModal() {
+      const m = document.getElementById('trainingModal');
+      document.getElementById('tModalLoading').style.display = 'block';
+      document.getElementById('tModalContent').style.display = 'none';
+      tSelectedDate = null; tSelectedTime = null;
+      m.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+
+      fetch(`${T_API}/api/available-dates?training_type=${T_TYPE}`)
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById('tModalName').textContent = data.training_name;
+          tBlocked = data.blocked_dates || [];
+          const now = new Date();
+          tYear = now.getFullYear(); tMonth = now.getMonth();
+          tRenderCal();
+          document.getElementById('tModalLoading').style.display = 'none';
+          document.getElementById('tModalContent').style.display = 'block';
+        })
+        .catch(() => { alert('情報の取得に失敗しました'); closeTrainingModal(); });
+    }
+
+    function closeTrainingModal() {
+      document.getElementById('trainingModal').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('trainingModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeTrainingModal(); });
+
+    function tRenderCal() {
+      const g = document.getElementById('tCalGrid'); g.innerHTML = '';
+      document.getElementById('tCalMonthLabel').textContent = `${tYear}年${tMonth+1}月`;
+      T_DAYS.forEach(d => { const e=document.createElement('div'); e.className='t-day-label'; e.textContent=d; g.appendChild(e); });
+      const first = new Date(tYear,tMonth,1).getDay();
+      const days = new Date(tYear,tMonth+1,0).getDate();
+      const today = new Date(); today.setHours(0,0,0,0);
+      for(let i=0;i<first;i++){const e=document.createElement('div');e.className='t-cell';g.appendChild(e);}
+      for(let d=1;d<=days;d++){
+        const e=document.createElement('div');e.className='t-cell';e.textContent=d;
+        const date=new Date(tYear,tMonth,d);
+        const ds=`${tYear}-${String(tMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const dow=date.getDay();
+        if(dow===0)e.classList.add('sunday');if(dow===6)e.classList.add('saturday');
+        if(date>=today&&!tBlocked.includes(ds)){e.classList.add('active');e.addEventListener('click',()=>tSelectDate(e,ds));}
+        if(tSelectedDate===ds)e.classList.add('selected');
+        g.appendChild(e);
+      }
+    }
+
+    function tChangeMonth(d){tMonth+=d;if(tMonth<0){tMonth=11;tYear--;}if(tMonth>11){tMonth=0;tYear++;}tRenderCal();}
+
+    async function tSelectDate(el,ds){
+      document.querySelectorAll('.t-cell').forEach(c=>c.classList.remove('selected'));
+      el.classList.add('selected'); tSelectedDate=ds; tSelectedTime=null;
+      document.getElementById('tSelectedDatetime').style.display='none'; tUpdateBtn();
+      const sec=document.getElementById('tTimeSlotsSection');
+      const con=document.getElementById('tTimeSlotsContainer');
+      sec.style.display='block'; con.innerHTML='<p style="text-align:center;padding:16px;font-size:12px;color:var(--color-text-light);">時間枠を取得中...</p>';
+      try{
+        const r=await fetch(`${T_API}/api/available-dates?training_type=${T_TYPE}&date=${ds}`);
+        const data=await r.json(); con.innerHTML='';
+        if(!data.time_slots||data.time_slots.length===0){con.innerHTML='<p style="text-align:center;padding:16px;font-size:12px;color:var(--color-text-light);">この日は予約可能な時間がありません</p>';return;}
+        const grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:8px;';
+        data.time_slots.forEach(s=>{
+          const b=document.createElement('button');b.type='button';b.className='t-slot';
+          b.innerHTML=`<span class="t-time">${s.time}</span><span class="t-remaining">残り${s.slots_remaining}席</span>`;
+          b.addEventListener('click',()=>tSelectTime(b,s.time));grid.appendChild(b);
+        });
+        con.appendChild(grid);
+      }catch(err){con.innerHTML='<p style="text-align:center;color:#DC2626;">取得失敗</p>';}
+    }
+
+    function tSelectTime(btn,time){
+      document.querySelectorAll('.t-slot').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected'); tSelectedTime=time;
+      const d=new Date(tSelectedDate);const dn=T_DAYS[d.getDay()];const p=tSelectedDate.split('-');
+      document.getElementById('tSelectedDatetime').textContent=`選択中: ${p[0]}年${parseInt(p[1])}月${parseInt(p[2])}日（${dn}）${time}〜`;
+      document.getElementById('tSelectedDatetime').style.display='block'; tUpdateBtn();
+    }
+
+    function tUpdateBtn(){
+      const b=document.getElementById('tSubmitBtn');
+      if(tSelectedDate&&tSelectedTime){b.disabled=false;b.textContent='お支払いに進む →';b.style.background='var(--color-tiffany)';b.style.color='#fff';b.style.cursor='pointer';b.style.boxShadow='0 8px 24px rgba(10,186,181,0.25)';}
+      else{b.disabled=true;b.textContent=tSelectedDate?'時間を選択してください':'日程を選択してください';b.style.background='var(--color-border)';b.style.color='var(--color-text-light)';b.style.cursor='not-allowed';b.style.boxShadow='none';}
+    }
+
+    async function submitTrainingBooking(){
+      if(!tSelectedDate||!tSelectedTime)return;
+      const name=document.getElementById('tName').value;
+      const email=document.getElementById('tEmail').value;
+      if(!name||!email){alert('お名前とメールアドレスは必須です。');return;}
+      const b=document.getElementById('tSubmitBtn');b.disabled=true;b.innerHTML='<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px;"></span>処理中...';
+      try{
+        const r=await fetch(`${T_API}/api/create-checkout-session`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+          training_type:T_TYPE,training_date:`${tSelectedDate} ${tSelectedTime}`,
+          customer_name:name,customer_email:email,customer_phone:document.getElementById('tPhone').value,sessions:1
+        })});
+        if(!r.ok){const e=await r.json();throw new Error(e.detail||'失敗');}
+        const data=await r.json(); window.location.href=data.checkout_url;
+      }catch(err){alert(err.message);b.disabled=false;b.textContent='お支払いに進む →';b.style.background='var(--color-tiffany)';b.style.color='#fff';b.style.cursor='pointer';}
+    }
+  </script>
 </body>
 </html>
