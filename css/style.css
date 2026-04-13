@@ -181,7 +181,7 @@ p {
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-border);
   z-index: 1000;
-  padding: 0 1.5rem;
+  padding: 0 60px;
 }
 
 .nav-logo-img {
@@ -195,6 +195,8 @@ p {
   align-items: center;
   justify-content: space-between;
   height: 64px;
+  max-width: 100%;
+  padding: 0;
 }
 
 .nav-logo {
