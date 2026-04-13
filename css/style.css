@@ -438,10 +438,10 @@ p {
   border-top: 3px solid var(--color-accent);
 }
 
-/* --- Hero Section (カード型・ダーク) --- */
+/* --- Hero Section (カード型・フルスクリーン) --- */
 .hero {
   background: transparent;
-  color: var(--color-white);
+  color: var(--color-text);
   padding: 12px 40px;
   position: relative;
 }
@@ -449,35 +449,59 @@ p {
 .hero > .container {
   background: #FFFFFF;
   border-radius: 24px;
-  padding: 80px 160px;
+  padding: 0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 10px 40px rgba(17, 24, 39, 0.05);
   max-width: 1800px;
   position: relative;
   overflow: hidden;
+  min-height: calc(100vh - 64px - 24px - 12px);
+  display: flex;
+  align-items: center;
 }
 
-.hero > .container::after {
-  content: '';
-  position: absolute;
-  top: -200px;
-  right: -200px;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, var(--color-tiffany-bg) 0%, transparent 70%);
-  pointer-events: none;
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  align-items: center;
+  width: 100%;
+}
+
+.hero-content {
+  padding: 80px 80px 80px 160px;
+}
+
+.hero-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 80px 60px 0;
+}
+
+.hero-image img {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  border-radius: 16px;
 }
 
 @media (max-width: 1400px) {
-  .hero > .container { padding: 72px 100px; }
+  .hero-content { padding: 60px 60px 60px 100px; }
+  .hero-image { padding: 60px 60px 60px 0; }
 }
 
 @media (max-width: 1100px) {
-  .hero > .container { padding: 56px 56px; }
+  .hero-content { padding: 48px; }
+  .hero-image { padding: 48px; }
 }
 
 @media (max-width: 768px) {
   .hero { padding: 12px 12px; }
-  .hero > .container { padding: 48px 28px; border-radius: 16px; }
+  .hero > .container { min-height: auto; border-radius: 16px; }
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero-content { padding: 48px 28px; }
+  .hero-image { padding: 0 28px 40px; }
+  .hero-image img { max-width: 100%; }
 }
 
 .hero-badge {
