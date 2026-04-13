@@ -11,18 +11,34 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/lp.css">
   <title>ケース面接対策｜戦略コンサル出身者によるマンツーマン指導 | SYMMETRY Lab</title>
 </head>
 <body class="lp-page">
 
-  <!-- ヘッダー -->
-  <header class="lp-header">
-    <div class="lp-header-inner">
-      <a href="/lp-case.html" class="lp-logo"><img src="images/logo.jpg" alt="SYMMETRY Lab"></a>
-      <a href="#hero-form" class="lp-header-cta">ケース面接対策を申し込む</a>
+  <!-- ヘッダー（HP統一ナビ） -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="index.html" class="nav-logo"><img src="images/logo.jpg" alt="SYMMETRY Lab" class="nav-logo-img"></a>
+      <button class="nav-toggle" aria-label="メニュー" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links">
+        <a href="company.html">会社概要</a>
+        <div class="nav-dropdown">
+          <a href="services.html" class="nav-dropdown-trigger">サービス</a>
+          <div class="nav-dropdown-menu">
+            <a href="services.html">研修サービス</a>
+            <a href="lp-case.html">ケース面接対策</a>
+            <a href="faq.html">FAQ</a>
+          </div>
+        </div>
+        <a href="blog/index.html">ニュース・コラム</a>
+        <a href="contact.html">お問い合わせ</a>
+      </div>
     </div>
-  </header>
+  </nav>
 
   <!-- ヒーローセクション（2カラム） -->
   <section class="lp-hero">
@@ -459,6 +475,7 @@
     </div>
   </div>
 
+  <script src="js/main.js"></script>
   <script>
     // ============================================
     // FAQトグル
