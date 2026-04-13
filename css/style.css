@@ -1222,7 +1222,7 @@ p {
   grid-template-columns: auto auto auto;
   gap: 4rem;
   margin-bottom: 2rem;
-  justify-content: center;
+  justify-content: start;
 }
 
 .footer h4 {
