@@ -1164,23 +1164,46 @@ p {
   top: 0.85rem;
 }
 
-/* --- Footer (カード型) --- */
+/* --- Footer（全幅・薄グレー） --- */
 .footer {
-  background: transparent;
-  color: rgba(255, 255, 255, 0.7);
-  padding: 24px 40px 40px;
+  background: #E5E7EB;
+  color: var(--color-text);
+  padding: 64px 60px 32px;
 }
 
 .footer > .container {
-  background: var(--color-primary);
-  border-radius: 24px;
-  padding: 56px 80px 32px;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
   max-width: 1800px;
+  box-shadow: none;
+}
+
+.footer h4 {
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+
+.footer-brand img {
+  filter: none !important;
+}
+
+.footer-links a {
+  color: var(--color-text-light);
+}
+
+.footer-links a:hover {
+  color: var(--color-tiffany-dark);
+}
+
+.footer-bottom {
+  border-top: 1px solid var(--color-border);
+  color: var(--color-text-light);
 }
 
 @media (max-width: 768px) {
-  .footer { padding: 12px 12px 24px; }
-  .footer > .container { padding: 40px 28px 24px; border-radius: 16px; }
+  .footer { padding: 48px 28px 24px; }
 }
 
 .footer-grid {
