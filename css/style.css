@@ -1219,9 +1219,10 @@ p {
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 3rem;
+  grid-template-columns: auto auto auto;
+  gap: 4rem;
   margin-bottom: 2rem;
+  justify-content: center;
 }
 
 .footer h4 {
