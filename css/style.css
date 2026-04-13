@@ -4,24 +4,29 @@
 
 /* --- CSS Custom Properties --- */
 :root {
-  --color-primary: #1B2A4A;
-  --color-primary-light: #2C4270;
-  --color-accent: #00B4D8;
-  --color-accent-hover: #0096B7;
+  /* ===== LP統一カラーパレット（Tiffany Blue × Gray × White） ===== */
+  --color-primary: #1F2937;
+  --color-primary-light: #374151;
+  --color-accent: #0ABAB5;
+  --color-accent-hover: #058A85;
   --color-bg: #FFFFFF;
-  --color-bg-alt: #F5F7FA;
-  --color-text: #333333;
+  --color-bg-alt: #F9FAFB;
+  --color-text: #1F2937;
   --color-text-light: #6B7280;
   --color-border: #E5E7EB;
   --color-white: #FFFFFF;
-  --color-success: #10B981;
+  --color-success: #0ABAB5;
   --color-warning: #F59E0B;
-  --font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Meiryo", sans-serif;
+  --color-tiffany: #0ABAB5;
+  --color-tiffany-dark: #058A85;
+  --color-tiffany-light: #7FD8D4;
+  --color-tiffany-bg: #E6F7F6;
+  --font-family: "Inter", "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Hiragino Sans", sans-serif;
   --max-width: 1100px;
-  --radius: 8px;
-  --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.12);
-  --transition: 0.3s ease;
+  --radius: 4px;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(17, 24, 39, 0.04);
+  --shadow-lg: 0 1px 3px rgba(0, 0, 0, 0.04), 0 10px 40px rgba(17, 24, 39, 0.06);
+  --transition: 0.25s ease;
 }
 
 /* --- Reset & Base --- */
@@ -42,6 +47,8 @@ body {
   background: var(--color-bg);
   line-height: 1.8;
   -webkit-font-smoothing: antialiased;
+  letter-spacing: 0.02em;
+  font-feature-settings: "palt";
 }
 
 img {
@@ -143,10 +150,18 @@ p {
 .navbar {
   position: sticky;
   top: 0;
-  background: var(--color-white);
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--color-border);
   z-index: 1000;
   padding: 0 1.5rem;
+}
+
+.nav-logo-img {
+  height: 32px;
+  width: auto;
+  display: block;
 }
 
 .navbar .container {
@@ -327,39 +342,80 @@ p {
 
 /* --- Hero Section --- */
 .hero {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-  color: var(--color-white);
-  padding: 100px 0;
+  background: #FFFFFF;
+  color: var(--color-text);
+  padding: 96px 0 120px;
   position: relative;
   overflow: hidden;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -200px;
+  right: -200px;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, var(--color-tiffany-bg) 0%, transparent 70%);
+  pointer-events: none;
 }
 
 .hero::after {
-  content: "";
+  content: '';
   position: absolute;
-  top: -50%;
-  right: -20%;
-  width: 600px;
-  height: 600px;
-  background: rgba(0, 180, 216, 0.08);
-  border-radius: 50%;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-tiffany) 0%, var(--color-tiffany-light) 50%, transparent 100%);
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-tiffany-dark);
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 28px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-family: "Inter", sans-serif;
+}
+
+.hero-badge::before {
+  content: '';
+  width: 32px;
+  height: 1px;
+  background: var(--color-tiffany);
 }
 
 .hero h1 {
-  color: var(--color-white);
-  font-size: 2.5rem;
-  margin-bottom: 1.25rem;
+  color: var(--color-primary);
+  font-size: 2.4rem;
+  font-weight: 800;
+  margin-bottom: 1.5rem;
   position: relative;
   z-index: 1;
+  letter-spacing: -0.02em;
+  line-height: 1.4;
+}
+
+.hero h1 .accent {
+  color: var(--color-tiffany-dark);
+  border-bottom: 3px solid var(--color-tiffany);
+  padding-bottom: 2px;
 }
 
 .hero p {
-  font-size: 1.1rem;
-  opacity: 0.9;
-  max-width: 600px;
-  margin-bottom: 2rem;
+  font-size: 1rem;
+  color: var(--color-text-light);
+  max-width: 640px;
+  margin-bottom: 2.5rem;
   position: relative;
   z-index: 1;
+  line-height: 2;
 }
 
 .hero .btn-group {
@@ -367,23 +423,168 @@ p {
   z-index: 1;
 }
 
+.hero-proof {
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background: var(--color-tiffany-bg);
+  border-left: 3px solid var(--color-tiffany);
+  margin-top: 32px;
+}
+
+.hero-proof-num {
+  font-size: 36px;
+  font-weight: 300;
+  color: var(--color-tiffany-dark);
+  line-height: 1;
+  font-family: "Inter", sans-serif;
+}
+
+.hero-proof-num span {
+  font-size: 16px;
+  margin-left: 2px;
+}
+
+.hero-proof-label strong {
+  display: block;
+  font-size: 13px;
+  color: var(--color-primary);
+}
+
+.hero-proof-label span {
+  font-size: 10px;
+  color: var(--color-text-light);
+}
+
 /* --- Feature/Strength Section --- */
 .strength-item {
-  text-align: center;
-  padding: 1.5rem;
+  text-align: left;
+  padding: 2rem;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.strength-item:hover {
+  border-color: var(--color-tiffany-light);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+.strength-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3px;
+  height: 0;
+  background: var(--color-tiffany);
+  transition: height 0.4s ease;
+}
+
+.strength-item:hover::before {
+  height: 100%;
+}
+
+.strength-num {
+  font-size: 36px;
+  font-weight: 300;
+  color: var(--color-tiffany);
+  font-family: "Inter", sans-serif;
+  margin-bottom: 20px;
+  letter-spacing: -0.02em;
+  line-height: 1;
 }
 
 .strength-icon {
-  width: 64px;
-  height: 64px;
-  background: var(--color-accent);
-  color: var(--color-white);
-  border-radius: 50%;
-  display: flex;
+  display: none;
+}
+
+/* --- ケース面接対策 CTAカード --- */
+.case-cta-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-tiffany);
+  border-radius: var(--radius);
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 48px;
+  padding: 56px 64px;
   align-items: center;
-  justify-content: center;
-  margin: 0 auto 1rem;
-  font-size: 1.75rem;
+}
+
+.case-cta-content h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+.case-cta-content p {
+  font-size: 0.95rem;
+  color: var(--color-text-light);
+  line-height: 2;
+  margin-bottom: 20px;
+}
+
+.case-cta-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.case-cta-features span {
+  display: inline-block;
+  font-size: 12px;
+  color: var(--color-tiffany-dark);
+  border: 1px solid var(--color-tiffany-light);
+  padding: 5px 14px;
+  border-radius: 2px;
+  letter-spacing: 0.03em;
+  font-weight: 500;
+}
+
+.case-cta-action {
+  text-align: center;
+  padding: 40px;
+  background: var(--color-bg-alt);
+  border-radius: var(--radius);
+}
+
+.case-cta-price {
+  font-size: 40px;
+  font-weight: 300;
+  color: var(--color-primary);
+  font-family: "Inter", sans-serif;
+  margin-bottom: 24px;
+  letter-spacing: -0.03em;
+}
+
+.case-cta-price span {
+  font-size: 14px;
+  color: var(--color-text-light);
+  margin-left: 4px;
+  font-weight: 400;
+}
+
+@media (max-width: 768px) {
+  .case-cta-card {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding: 36px 28px;
+  }
+
+  .case-cta-action {
+    padding: 28px;
+  }
+
+  .case-cta-price {
+    font-size: 32px;
+  }
 }
 
 /* --- Service Cards --- */
@@ -483,10 +684,21 @@ p {
 
 /* --- CTA Banner --- */
 .cta-banner {
-  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-hover) 100%);
+  background: var(--color-primary);
   color: var(--color-white);
   text-align: center;
-  padding: 60px 0;
+  padding: 80px 0;
+  position: relative;
+}
+
+.cta-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, var(--color-tiffany), transparent);
 }
 
 .cta-banner h2 {
@@ -906,11 +1118,11 @@ p {
   }
 
   .hero {
-    padding: 60px 0;
+    padding: 60px 0 72px;
   }
 
   .hero h1 {
-    font-size: 1.75rem;
+    font-size: 1.6rem;
   }
 
   .grid-2,
