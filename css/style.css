@@ -100,14 +100,14 @@ p {
 }
 
 .section {
-  padding: 24px 40px;
+  padding: 12px 40px;
   background: transparent;
 }
 
 .section > .container {
   background: #FFFFFF;
   border-radius: 24px;
-  padding: 80px 160px;
+  padding: 48px 160px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 10px 40px rgba(17, 24, 39, 0.05);
   max-width: 1800px;
 }
@@ -145,7 +145,7 @@ p {
 
 .section-header {
   text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
 }
 
 .section-header p {
@@ -707,7 +707,7 @@ p {
 .service-card-header {
   background: var(--color-primary);
   color: var(--color-white);
-  padding: 1.5rem 2rem;
+  padding: 1rem 1.5rem;
 }
 
 .service-card-header h3 {
@@ -716,7 +716,7 @@ p {
 }
 
 .service-card-body {
-  padding: 2rem;
+  padding: 1.25rem 1.5rem;
 }
 
 .service-card-body ul {
@@ -796,14 +796,14 @@ p {
   background: transparent;
   color: var(--color-white);
   text-align: center;
-  padding: 24px 40px;
+  padding: 12px 40px;
   position: relative;
 }
 
 .cta-banner > .container {
   background: var(--color-primary);
   border-radius: 24px;
-  padding: 80px 160px;
+  padding: 48px 160px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 10px 40px rgba(17, 24, 39, 0.08);
   max-width: 1800px;
   position: relative;
