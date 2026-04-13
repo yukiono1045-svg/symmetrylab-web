@@ -1179,7 +1179,7 @@ p {
 .footer {
   background: #9CA3AF;
   color: #1F2937;
-  padding: 64px 60px 32px;
+  padding: 64px 60px 32px 160px;
 }
 
 .footer > .container {
