@@ -480,9 +480,10 @@ p {
 
 .hero-image img {
   width: 100%;
-  max-width: 560px;
+  max-width: 720px;
   height: auto;
   border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(17, 24, 39, 0.12);
 }
 
 @media (max-width: 1400px) {
