@@ -1166,8 +1166,8 @@ p {
 
 /* --- Footer（全幅・薄グレー） --- */
 .footer {
-  background: #E5E7EB;
-  color: var(--color-text);
+  background: #9CA3AF;
+  color: #1F2937;
   padding: 64px 60px 32px;
 }
 
@@ -1190,7 +1190,7 @@ p {
 }
 
 .footer-links a {
-  color: var(--color-text-light);
+  color: #1F2937;
 }
 
 .footer-links a:hover {
@@ -1198,8 +1198,8 @@ p {
 }
 
 .footer-bottom {
-  border-top: 1px solid var(--color-border);
-  color: var(--color-text-light);
+  border-top: 1px solid rgba(31, 41, 55, 0.2);
+  color: #1F2937;
 }
 
 @media (max-width: 768px) {
