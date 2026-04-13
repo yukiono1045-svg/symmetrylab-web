@@ -599,7 +599,7 @@ p {
 /* --- Feature/Strength Section --- */
 .strength-item {
   text-align: left;
-  padding: 2rem;
+  padding: 3rem;
   background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
@@ -629,13 +629,23 @@ p {
 }
 
 .strength-num {
-  font-size: 36px;
+  font-size: 52px;
   font-weight: 300;
   color: var(--color-tiffany);
   font-family: "Inter", sans-serif;
-  margin-bottom: 20px;
+  margin-bottom: 28px;
   letter-spacing: -0.02em;
   line-height: 1;
+}
+
+.strength-item h3 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.strength-item p {
+  font-size: 1.1rem;
+  line-height: 2;
 }
 
 .strength-icon {
