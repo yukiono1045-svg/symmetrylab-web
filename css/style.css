@@ -639,8 +639,9 @@ p {
 }
 
 .strength-item h3 {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   margin-bottom: 1rem;
+  white-space: nowrap;
 }
 
 .strength-item p {
