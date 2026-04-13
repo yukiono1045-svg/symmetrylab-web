@@ -48,11 +48,7 @@
   background: var(--lp-gray-100);
 }
 
-.lp-page *:not(.navbar *):not(.navbar):not(.footer *):not(.footer) {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* リセットはstyle.cssで実施済み */
 
 .lp-container {
   max-width: 1080px;
