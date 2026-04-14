@@ -151,6 +151,11 @@
     .block-cal-cell.active:hover { background: #f0f0f0; }
     .block-cal-cell.blocked { background: #0ABAB5; color: #fff; font-weight: 700; }
     .block-cal-cell.blocked:hover { background: #058A85; }
+    .block-cal-cell.editing { outline: 3px solid #F59E0B; }
+    .ts-btn { padding:10px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;text-align:center;font-size:14px;font-weight:600;font-family:inherit;transition:all 0.2s; }
+    .ts-btn:hover { border-color:#0ABAB5;background:#f0fafe; }
+    .ts-btn.active { background:#0ABAB5;color:#fff;border-color:#0ABAB5; }
+    .ts-btn.active:hover { background:#058A85; }
     .block-type-select { margin-bottom: 1rem; }
     .block-type-select select {
       padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px;
@@ -284,11 +289,18 @@
         </div>
         <div class="block-cal-grid" id="block-cal-grid"></div>
         <div class="block-legend">
-          <span class="leg-blocked">対応可能</span>
+          <span class="leg-blocked">対応可能（時間設定済み）</span>
           <span class="leg-available">未設定</span>
         </div>
       </div>
-      <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:1rem;">カレンダーの日付をクリックして対応可能な日を選択してください。選択した日のみお客様の予約画面に表示されます。変更後は「保存」を押してください。</p>
+
+      <div id="time-slot-editor" style="display:none;margin:1rem 0;padding:1rem;background:#f0fafe;border:1px solid #0ABAB5;border-radius:8px;">
+        <h4 id="time-slot-date-label" style="margin-bottom:0.75rem;color:#1a2332;"></h4>
+        <p style="font-size:0.8rem;color:var(--text-light);margin-bottom:0.75rem;">対応可能な時間をクリックして選択してください</p>
+        <div id="time-slot-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
+      </div>
+
+      <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:1rem;">① カレンダーの日付をクリック → ② 対応可能な時間を選択 → ③「保存」を押してください。</p>
       <button class="btn-save-block" onclick="saveBlockedDates()">保存</button>
       <span class="save-msg" id="save-msg">保存しました</span>
     </div>
@@ -299,7 +311,9 @@
   const API_BASE = window.location.origin;
   let adminKey = '';
   let allBookings = [];
-  let blockedDatesMap = {}; // now stores available_dates
+  let availableSlotsMap = {}; // {type: {date: [times]}}
+  let allTimeSlotsMap = {}; // {type: [all possible times]}
+  let editingDate = null;
   let blockYear, blockMonth;
   const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
 
@@ -459,10 +473,14 @@
     try {
       const res = await fetch(`${API_BASE}/api/admin/blocked-dates?key=${encodeURIComponent(adminKey)}`);
       const data = await res.json();
-      blockedDatesMap = {};
+      availableSlotsMap = {};
+      allTimeSlotsMap = {};
       for (const [key, val] of Object.entries(data)) {
-        blockedDatesMap[key] = val.available_dates || [];
+        availableSlotsMap[key] = val.available_slots || {};
+        allTimeSlotsMap[key] = val.time_slots || [];
       }
+      editingDate = null;
+      document.getElementById('time-slot-editor').style.display = 'none';
       renderBlockCalendar();
     } catch (err) {
       console.error(err);
@@ -473,7 +491,7 @@
     const grid = document.getElementById('block-cal-grid');
     grid.innerHTML = '';
     const type = document.getElementById('block-type').value;
-    const blocked = blockedDatesMap[type] || [];
+    const slots = availableSlotsMap[type] || {};
 
     document.getElementById('block-month-label').textContent = `${blockYear}年${blockMonth + 1}月`;
 
@@ -497,39 +515,105 @@
       el.className = 'block-cal-cell active';
       el.textContent = day;
 
-      if (blocked.includes(dateStr)) {
+      if (slots[dateStr] && slots[dateStr].length > 0) {
         el.classList.add('blocked');
+      }
+      if (editingDate === dateStr) {
+        el.classList.add('editing');
       }
 
       el.addEventListener('click', () => {
-        const idx = blockedDatesMap[type].indexOf(dateStr);
-        if (idx >= 0) {
-          blockedDatesMap[type].splice(idx, 1);
-        } else {
-          blockedDatesMap[type].push(dateStr);
-        }
+        editingDate = dateStr;
         renderBlockCalendar();
+        renderTimeSlotEditor(type, dateStr);
       });
 
       grid.appendChild(el);
     }
   }
 
+  function renderTimeSlotEditor(type, dateStr) {
+    const editor = document.getElementById('time-slot-editor');
+    const grid = document.getElementById('time-slot-grid');
+    const label = document.getElementById('time-slot-date-label');
+    const d = new Date(dateStr);
+    const dn = DAY_NAMES[d.getDay()];
+    const p = dateStr.split('-');
+    label.textContent = `${parseInt(p[1])}月${parseInt(p[2])}日（${dn}）の対応可能時間`;
+
+    const allTimes = allTimeSlotsMap[type] || [];
+    const currentTimes = (availableSlotsMap[type] || {})[dateStr] || [];
+
+    grid.innerHTML = '';
+    allTimes.forEach(time => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ts-btn' + (currentTimes.includes(time) ? ' active' : '');
+      btn.textContent = time;
+      btn.addEventListener('click', () => {
+        if (!availableSlotsMap[type]) availableSlotsMap[type] = {};
+        if (!availableSlotsMap[type][dateStr]) availableSlotsMap[type][dateStr] = [];
+        const arr = availableSlotsMap[type][dateStr];
+        const idx = arr.indexOf(time);
+        if (idx >= 0) {
+          arr.splice(idx, 1);
+          if (arr.length === 0) delete availableSlotsMap[type][dateStr];
+        } else {
+          arr.push(time);
+          arr.sort();
+        }
+        renderBlockCalendar();
+        renderTimeSlotEditor(type, dateStr);
+      });
+      grid.appendChild(btn);
+    });
+
+    // 全選択/全解除ボタン
+    const actions = document.createElement('div');
+    actions.style.cssText = 'display:flex;gap:8px;margin-top:10px;';
+    const selectAll = document.createElement('button');
+    selectAll.type = 'button';
+    selectAll.textContent = '全選択';
+    selectAll.style.cssText = 'padding:6px 16px;border:1px solid #0ABAB5;background:#fff;color:#0ABAB5;border-radius:4px;cursor:pointer;font-size:12px;font-family:inherit;';
+    selectAll.addEventListener('click', () => {
+      if (!availableSlotsMap[type]) availableSlotsMap[type] = {};
+      availableSlotsMap[type][dateStr] = [...allTimes];
+      renderBlockCalendar();
+      renderTimeSlotEditor(type, dateStr);
+    });
+    const clearAll = document.createElement('button');
+    clearAll.type = 'button';
+    clearAll.textContent = '全解除';
+    clearAll.style.cssText = 'padding:6px 16px;border:1px solid #ddd;background:#fff;color:#888;border-radius:4px;cursor:pointer;font-size:12px;font-family:inherit;';
+    clearAll.addEventListener('click', () => {
+      if (availableSlotsMap[type]) delete availableSlotsMap[type][dateStr];
+      renderBlockCalendar();
+      renderTimeSlotEditor(type, dateStr);
+    });
+    actions.appendChild(selectAll);
+    actions.appendChild(clearAll);
+    grid.appendChild(actions);
+
+    editor.style.display = 'block';
+  }
+
   function changeBlockMonth(delta) {
     blockMonth += delta;
     if (blockMonth < 0) { blockMonth = 11; blockYear--; }
     if (blockMonth > 11) { blockMonth = 0; blockYear++; }
+    editingDate = null;
+    document.getElementById('time-slot-editor').style.display = 'none';
     renderBlockCalendar();
   }
 
   async function saveBlockedDates() {
     const type = document.getElementById('block-type').value;
-    const blocked = blockedDatesMap[type] || [];
+    const slots = availableSlotsMap[type] || {};
     try {
       const res = await fetch(`${API_BASE}/api/admin/blocked-dates?key=${encodeURIComponent(adminKey)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ training_type: type, available_dates: blocked })
+        body: JSON.stringify({ training_type: type, available_slots: slots })
       });
       if (!res.ok) throw new Error();
       const msg = document.getElementById('save-msg');

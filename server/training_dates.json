@@ -5,7 +5,7 @@
     "price_label": "¥15,000 / 各日（税込）",
     "max_capacity": 10,
     "time_slots": ["10:00", "13:00", "15:00"],
-    "available_dates": [],
+    "available_slots": {},
     "blocked_dates": []
   },
   "case_interview": {
@@ -14,7 +14,7 @@
     "price_label": "¥7,000 / 1時間（税込）",
     "max_capacity": 5,
     "time_slots": ["18:00", "19:00", "20:00", "21:00", "22:00", "23:00"],
-    "available_dates": [],
+    "available_slots": {},
     "blocked_dates": []
   }
 }

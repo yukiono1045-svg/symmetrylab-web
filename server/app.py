@@ -277,36 +277,44 @@ def send_booking_confirmation(metadata: dict, amount: int):
 @app.get("/api/available-dates")
 async def get_available_dates(training_type: str, date: str = ""):
     data = load_training_dates()
-    # case_interview_new/mid → case_interview にフォールバック
     training = data.get(training_type)
     if not training and training_type in ("case_interview_new", "case_interview_mid"):
         training = data.get("case_interview")
     if not training:
         raise HTTPException(status_code=404, detail="研修種別が見つかりません")
 
-    available = training.get("available_dates", [])
+    avail_slots = training.get("available_slots", {})
     time_slots = training.get("time_slots", [])
 
     if date:
-        # available_datesが空なら全日許可（後方互換）、設定済みならその日のみ許可
-        if available and date not in available:
-            return {"time_slots": []}
         if date < datetime.now().strftime("%Y-%m-%d"):
             return {"time_slots": []}
-        available_slots = []
-        for slot in time_slots:
+        # available_slotsが空なら全スロット許可、設定済みならその日のスロットのみ
+        if avail_slots:
+            allowed_times = avail_slots.get(date, [])
+            if not allowed_times:
+                return {"time_slots": []}
+        else:
+            allowed_times = time_slots
+
+        available = []
+        for slot in allowed_times:
             booked = count_bookings_for_date(training_type, f"{date} {slot}")
             remaining = training["max_capacity"] - booked
             if remaining > 0:
-                available_slots.append({"time": slot, "slots_remaining": remaining})
-        return {"time_slots": available_slots}
+                available.append({"time": slot, "slots_remaining": remaining})
+        return {"time_slots": available}
+
+    # 日付一覧: available_slotsのキー
+    available_dates = list(avail_slots.keys()) if avail_slots else []
 
     return {
         "training_name": training["name"],
         "price": training["price"],
         "price_label": training["price_label"],
         "time_slots": time_slots,
-        "available_dates": available,
+        "available_dates": available_dates,
+        "available_slots": avail_slots,
     }
 
 
@@ -319,9 +327,9 @@ async def create_checkout_session(req: CheckoutRequest):
     if not training:
         raise HTTPException(status_code=400, detail="無効な研修種別です")
 
-    available = training.get("available_dates", [])
+    avail_slots = training.get("available_slots", {})
     date_part = req.training_date.split(" ")[0] if " " in req.training_date else req.training_date
-    if available and date_part not in available:
+    if avail_slots and date_part not in avail_slots:
         raise HTTPException(status_code=400, detail="この日程は予約できません")
 
     booked = count_bookings_for_date(req.training_type, req.training_date)
@@ -461,7 +469,7 @@ async def list_bookings(key: str = ""):
 
 @app.get("/api/admin/blocked-dates")
 async def get_blocked_dates(key: str = ""):
-    """予約可能日一覧を取得"""
+    """予約可能日時一覧を取得"""
     if key != ADMIN_KEY:
         raise HTTPException(status_code=403, detail="認証が必要です")
     data = load_training_dates()
@@ -469,30 +477,27 @@ async def get_blocked_dates(key: str = ""):
     for t_type, t_data in data.items():
         result[t_type] = {
             "name": t_data["name"],
-            "available_dates": t_data.get("available_dates", []),
-            "blocked_dates": t_data.get("blocked_dates", []),
+            "time_slots": t_data.get("time_slots", []),
+            "available_slots": t_data.get("available_slots", {}),
         }
     return result
 
 
 @app.post("/api/admin/blocked-dates")
 async def update_blocked_dates(request: Request, key: str = ""):
-    """予約可能日を更新"""
+    """予約可能日時を更新"""
     if key != ADMIN_KEY:
         raise HTTPException(status_code=403, detail="認証が必要です")
     body = await request.json()
     training_type = body.get("training_type", "")
-    available = body.get("available_dates", None)
-    blocked = body.get("blocked_dates", None)
+    available_slots = body.get("available_slots", None)
 
     data = load_training_dates()
     if training_type not in data:
         raise HTTPException(status_code=400, detail="無効な研修種別です")
 
-    if available is not None:
-        data[training_type]["available_dates"] = available
-    if blocked is not None:
-        data[training_type]["blocked_dates"] = blocked
+    if available_slots is not None:
+        data[training_type]["available_slots"] = available_slots
     with open(TRAINING_DATES_PATH, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
