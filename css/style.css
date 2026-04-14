@@ -791,7 +791,10 @@ p {
 
 .service-card-body ul {
   margin-bottom: 0.75rem;
-  min-height: 140px;
+}
+
+.service-card-body p {
+  min-height: 3.6rem;
 }
 
 .service-card-body li {
