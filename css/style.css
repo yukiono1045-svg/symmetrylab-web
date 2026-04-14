@@ -78,9 +78,9 @@ h1, h2, h3, h4 {
   line-height: 1.4;
 }
 
-h1 { font-size: 2.5rem; }
-h2 { font-size: 2rem; margin-bottom: 1rem; }
-h3 { font-size: 1.35rem; margin-bottom: 0.75rem; }
+h1 { font-size: clamp(1.6rem, 3vw, 2.5rem); }
+h2 { font-size: clamp(1.4rem, 2.5vw, 2rem); margin-bottom: 1rem; }
+h3 { font-size: clamp(1.1rem, 1.5vw, 1.35rem); margin-bottom: 0.75rem; }
 h4 { font-size: 1.15rem; }
 
 p {
@@ -107,7 +107,7 @@ p {
 .section > .container {
   background: #FFFFFF;
   border-radius: 24px;
-  padding: 36px 160px;
+  padding: clamp(28px, 3vw, 36px) clamp(28px, 10vw, 160px);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 10px 40px rgba(17, 24, 39, 0.05);
   max-width: 1800px;
 }
@@ -481,14 +481,14 @@ p {
 }
 
 .hero-content {
-  padding: 80px 80px 80px 160px;
+  padding: clamp(40px, 5vw, 80px) clamp(28px, 5vw, 80px) clamp(40px, 5vw, 80px) clamp(28px, 10vw, 160px);
 }
 
 .hero-image {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 60px 80px 60px 0;
+  padding: clamp(28px, 4vw, 60px) clamp(28px, 5vw, 80px) clamp(28px, 4vw, 60px) 0;
 }
 
 .hero-image img {
@@ -540,9 +540,9 @@ p {
 
 .hero h1 {
   color: var(--color-primary);
-  font-size: 3rem;
+  font-size: clamp(1.8rem, 3vw, 3rem);
   font-weight: 800;
-  margin-bottom: 2rem;
+  margin-bottom: clamp(1rem, 2vw, 2rem);
   position: relative;
   z-index: 1;
   letter-spacing: -0.02em;
@@ -550,13 +550,13 @@ p {
 }
 
 .hero p {
-  font-size: 1.2rem;
+  font-size: clamp(0.9rem, 1.2vw, 1.2rem);
   color: var(--color-text-light);
   max-width: 640px;
-  margin-bottom: 3rem;
+  margin-bottom: clamp(1.5rem, 2.5vw, 3rem);
   position: relative;
   z-index: 1;
-  line-height: 2;
+  line-height: 1.9;
 }
 
 .hero .btn-group {
