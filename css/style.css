@@ -171,8 +171,10 @@ p {
 .grid-2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 1.5rem;
+  gap: 2.5rem;
   align-items: stretch;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .grid-3 {
