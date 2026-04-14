@@ -351,13 +351,13 @@
     // 予約モーダル & Stripe連携
     // ============================================
     const API_BASE = window.location.origin;
-    const TRAINING_TYPE = 'case_interview_new';
+    const TRAINING_TYPE = 'case_interview';
     const SESSION_PRICE = 7000;
 
     let selectedDate = null;
     let picks = []; // max 3: [{date, time}]
     let currentYear, currentMonth;
-    let blockedDates = [];
+    let availableDates = [];
     let bookingApplicantData = {};
     const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
     const PICK_LABELS = ['第1希望', '第2希望', '第3希望'];
@@ -423,7 +423,7 @@
         const data = await res.json();
 
         document.getElementById('modalProgramName').textContent = data.training_name;
-        blockedDates = data.blocked_dates || [];
+        availableDates = data.available_dates || [];
 
         const now = new Date();
         currentYear = now.getFullYear();
@@ -486,9 +486,9 @@
         if (dayOfWeek === 6) el.classList.add('saturday');
 
         const isPast = date < today;
-        const isBlocked = blockedDates.includes(dateStr);
+        const isAvail = availableDates.length === 0 || availableDates.includes(dateStr);
 
-        if (!isPast && !isBlocked) {
+        if (!isPast && isAvail) {
           el.classList.add('active');
           el.addEventListener('click', () => selectCalendarDate(el, dateStr));
         }

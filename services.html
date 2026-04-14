@@ -239,7 +239,7 @@
     const T_TYPE = 'practical_skills';
     let tSelectedDate = null;
     let tPicks = []; // [{date, time, dateLabel}] max 3
-    let tYear, tMonth, tBlocked = [];
+    let tYear, tMonth, tAvailable = [];
     const T_DAYS = ['日','月','火','水','木','金','土'];
     const T_LABELS = ['第1希望','第2希望','第3希望'];
 
@@ -255,7 +255,7 @@
         .then(r => r.json())
         .then(data => {
           document.getElementById('tModalName').textContent = data.training_name;
-          tBlocked = data.blocked_dates || [];
+          tAvailable = data.available_dates || [];
           const now = new Date();
           tYear = now.getFullYear(); tMonth = now.getMonth();
           tRenderCal();
@@ -287,7 +287,8 @@
         const ds=`${tYear}-${String(tMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         const dow=date.getDay();
         if(dow===0)e.classList.add('sunday');if(dow===6)e.classList.add('saturday');
-        if(date>=today&&!tBlocked.includes(ds)){e.classList.add('active');e.addEventListener('click',()=>tSelectDate(e,ds));}
+        const isAvail = tAvailable.length===0 || tAvailable.includes(ds);
+        if(date>=today&&isAvail){e.classList.add('active');e.addEventListener('click',()=>tSelectDate(e,ds));}
         if(tSelectedDate===ds)e.classList.add('selected');
         g.appendChild(e);
       }

@@ -149,8 +149,8 @@
     }
     .block-cal-cell.active { color: var(--text); cursor: pointer; }
     .block-cal-cell.active:hover { background: #f0f0f0; }
-    .block-cal-cell.blocked { background: var(--danger); color: #fff; font-weight: 700; }
-    .block-cal-cell.blocked:hover { background: #c0392b; }
+    .block-cal-cell.blocked { background: #0ABAB5; color: #fff; font-weight: 700; }
+    .block-cal-cell.blocked:hover { background: #058A85; }
     .block-type-select { margin-bottom: 1rem; }
     .block-type-select select {
       padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px;
@@ -168,7 +168,7 @@
       content: ''; display: inline-block; width: 12px; height: 12px;
       border-radius: 3px; margin-right: 4px; vertical-align: middle;
     }
-    .block-legend .leg-blocked::before { background: var(--danger); }
+    .block-legend .leg-blocked::before { background: #0ABAB5; }
     .block-legend .leg-available::before { background: #e8e8e8; }
     .save-msg { display: inline-block; margin-left: 1rem; color: var(--success); font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; }
     .save-msg.show { opacity: 1; }
@@ -204,7 +204,7 @@
   <div class="tabs">
     <button class="tab active" onclick="switchTab('dashboard')">ダッシュボード</button>
     <button class="tab" onclick="switchTab('bookings')">予約一覧</button>
-    <button class="tab" onclick="switchTab('blocked')">予約不可日設定</button>
+    <button class="tab" onclick="switchTab('blocked')">予約対応可能日設定</button>
   </div>
 
   <!-- ダッシュボード -->
@@ -265,15 +265,14 @@
     </div>
   </div>
 
-  <!-- 予約不可日設定 -->
+  <!-- 予約対応可能日設定 -->
   <div class="tab-content" id="tab-blocked">
     <div class="block-section">
       <div class="block-type-select">
         <label style="font-weight:700;margin-right:0.75rem;">研修種別：</label>
         <select id="block-type" onchange="loadBlockedDates()">
           <option value="practical_skills">実践スキル研修</option>
-          <option value="case_interview_new">ケース面接対策（新卒）</option>
-          <option value="case_interview_mid">ケース面接対策（中途）</option>
+          <option value="case_interview">ケース面接対策</option>
         </select>
       </div>
 
@@ -285,11 +284,11 @@
         </div>
         <div class="block-cal-grid" id="block-cal-grid"></div>
         <div class="block-legend">
-          <span class="leg-blocked">予約不可</span>
-          <span class="leg-available">予約可能</span>
+          <span class="leg-blocked">対応可能</span>
+          <span class="leg-available">未設定</span>
         </div>
       </div>
-      <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:1rem;">カレンダーの日付をクリックすると予約不可/可能を切り替えます。変更後は「保存」を押してください。</p>
+      <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:1rem;">カレンダーの日付をクリックして対応可能な日を選択してください。選択した日のみお客様の予約画面に表示されます。変更後は「保存」を押してください。</p>
       <button class="btn-save-block" onclick="saveBlockedDates()">保存</button>
       <span class="save-msg" id="save-msg">保存しました</span>
     </div>
@@ -300,7 +299,7 @@
   const API_BASE = window.location.origin;
   let adminKey = '';
   let allBookings = [];
-  let blockedDatesMap = {};
+  let blockedDatesMap = {}; // now stores available_dates
   let blockYear, blockMonth;
   const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
 
@@ -462,7 +461,7 @@
       const data = await res.json();
       blockedDatesMap = {};
       for (const [key, val] of Object.entries(data)) {
-        blockedDatesMap[key] = val.blocked_dates || [];
+        blockedDatesMap[key] = val.available_dates || [];
       }
       renderBlockCalendar();
     } catch (err) {
@@ -530,7 +529,7 @@
       const res = await fetch(`${API_BASE}/api/admin/blocked-dates?key=${encodeURIComponent(adminKey)}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ training_type: type, blocked_dates: blocked })
+        body: JSON.stringify({ training_type: type, available_dates: blocked })
       });
       if (!res.ok) throw new Error();
       const msg = document.getElementById('save-msg');
