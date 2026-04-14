@@ -764,6 +764,7 @@ p {
   background: var(--color-tiffany);
   color: var(--color-white);
   padding: 1rem 1.5rem;
+  min-height: 80px;
 }
 
 .service-card-header h3 {
@@ -781,6 +782,13 @@ p {
 .service-card {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  max-width: 400px;
+  width: 100%;
+}
+
+.grid-3 .service-card {
+  max-width: none;
 }
 
 .service-card-body .btn-primary,
