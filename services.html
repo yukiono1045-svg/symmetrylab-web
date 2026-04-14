@@ -179,11 +179,11 @@
           </div>
 
           <div id="tTimeSlotsSection" style="display:none;margin-bottom:20px;">
-            <label style="display:block;font-size:11px;font-weight:600;color:var(--color-text-light);margin-bottom:10px;letter-spacing:0.08em;text-transform:uppercase;">ご希望の時間 <span style="color:var(--color-tiffany-dark);font-size:10px;margin-left:6px;">● 必須</span></label>
+            <label style="display:block;font-size:11px;font-weight:600;color:var(--color-text-light);margin-bottom:10px;letter-spacing:0.08em;text-transform:uppercase;">ご希望の時間（第1〜第3希望） <span style="color:var(--color-tiffany-dark);font-size:10px;margin-left:6px;">● 第1希望必須</span></label>
             <div id="tTimeSlotsContainer"></div>
           </div>
 
-          <div id="tSelectedDatetime" style="display:none;background:var(--color-tiffany-bg);border-left:2px solid var(--color-tiffany);padding:12px 18px;font-size:13px;font-weight:600;color:var(--color-tiffany-dark);margin-bottom:20px;"></div>
+          <div id="tSelectedList" style="display:none;background:var(--color-tiffany-bg);border-left:2px solid var(--color-tiffany);padding:12px 18px;font-size:13px;color:var(--color-tiffany-dark);margin-bottom:20px;"></div>
 
           <div style="margin-bottom:16px;">
             <label style="display:block;font-size:11px;font-weight:600;color:var(--color-text-light);margin-bottom:6px;letter-spacing:0.08em;">お名前 <span style="color:var(--color-tiffany-dark);font-size:10px;">● 必須</span></label>
@@ -218,28 +218,34 @@
     .t-cell.selected{background:var(--color-tiffany);color:#fff;font-weight:700;}
     .t-cell.sunday.active{color:#DC2626} .t-cell.saturday.active{color:#2563EB}
     .t-cell.sunday.selected,.t-cell.saturday.selected{color:#fff}
-    .t-slot{padding:12px 8px;border:1px solid var(--color-border);border-radius:6px;background:#fff;cursor:pointer;text-align:center;transition:all 0.2s;font-family:inherit;}
+    .t-slot{padding:12px 8px;border:1px solid var(--color-border);border-radius:6px;background:#fff;cursor:pointer;text-align:center;transition:all 0.2s;font-family:inherit;position:relative;}
     .t-slot:hover{border-color:var(--color-tiffany);background:var(--color-tiffany-bg);}
-    .t-slot.selected{border-color:var(--color-tiffany);background:var(--color-tiffany);color:#fff;}
+    .t-slot.pick1{border-color:var(--color-tiffany);background:var(--color-tiffany);color:#fff;}
+    .t-slot.pick2{border-color:var(--color-tiffany);background:#058A85;color:#fff;}
+    .t-slot.pick3{border-color:var(--color-tiffany);background:#7FD8D4;color:#1F2937;}
     .t-slot .t-time{display:block;font-size:14px;font-weight:600;font-family:'Inter',sans-serif;}
-    .t-slot.selected .t-time{color:#fff}
+    .t-slot.pick1 .t-time,.t-slot.pick2 .t-time{color:#fff}
     .t-slot .t-remaining{display:block;font-size:10px;color:var(--color-text-light);margin-top:2px;}
-    .t-slot.selected .t-remaining{color:rgba(255,255,255,0.85)}
+    .t-slot.pick1 .t-remaining,.t-slot.pick2 .t-remaining{color:rgba(255,255,255,0.85)}
+    .t-slot.pick3 .t-remaining{color:#374151}
+    .t-pick-label{position:absolute;top:-8px;right:-4px;font-size:9px;font-weight:700;background:#fff;color:var(--color-tiffany-dark);border:1px solid var(--color-tiffany);border-radius:8px;padding:1px 6px;font-family:'Inter',sans-serif;}
   </style>
 
   <script src="js/main.js"></script>
   <script>
     const T_API = window.location.origin;
     const T_TYPE = 'practical_skills';
-    let tSelectedDate = null, tSelectedTime = null;
+    let tSelectedDate = null;
+    let tPicks = []; // [{time, el}, {time, el}, {time, el}] max 3
     let tYear, tMonth, tBlocked = [];
     const T_DAYS = ['日','月','火','水','木','金','土'];
+    const T_LABELS = ['第1希望','第2希望','第3希望'];
 
     function openTrainingModal() {
       const m = document.getElementById('trainingModal');
       document.getElementById('tModalLoading').style.display = 'block';
       document.getElementById('tModalContent').style.display = 'none';
-      tSelectedDate = null; tSelectedTime = null;
+      tSelectedDate = null; tPicks = [];
       m.style.display = 'flex';
       document.body.style.overflow = 'hidden';
 
@@ -288,8 +294,8 @@
 
     async function tSelectDate(el,ds){
       document.querySelectorAll('.t-cell').forEach(c=>c.classList.remove('selected'));
-      el.classList.add('selected'); tSelectedDate=ds; tSelectedTime=null;
-      document.getElementById('tSelectedDatetime').style.display='none'; tUpdateBtn();
+      el.classList.add('selected'); tSelectedDate=ds; tPicks=[];
+      document.getElementById('tSelectedList').style.display='none'; tUpdateBtn();
       const sec=document.getElementById('tTimeSlotsSection');
       const con=document.getElementById('tTimeSlotsContainer');
       sec.style.display='block'; con.innerHTML='<p style="text-align:center;padding:16px;font-size:12px;color:var(--color-text-light);">時間枠を取得中...</p>';
@@ -301,35 +307,55 @@
         data.time_slots.forEach(s=>{
           const b=document.createElement('button');b.type='button';b.className='t-slot';
           b.innerHTML=`<span class="t-time">${s.time}</span><span class="t-remaining">残り${s.slots_remaining}席</span>`;
-          b.addEventListener('click',()=>tSelectTime(b,s.time));grid.appendChild(b);
+          b.addEventListener('click',()=>tToggleTime(b,s.time));grid.appendChild(b);
         });
         con.appendChild(grid);
       }catch(err){con.innerHTML='<p style="text-align:center;color:#DC2626;">取得失敗</p>';}
     }
 
-    function tSelectTime(btn,time){
-      document.querySelectorAll('.t-slot').forEach(b=>b.classList.remove('selected'));
-      btn.classList.add('selected'); tSelectedTime=time;
-      const d=new Date(tSelectedDate);const dn=T_DAYS[d.getDay()];const p=tSelectedDate.split('-');
-      document.getElementById('tSelectedDatetime').textContent=`選択中: ${p[0]}年${parseInt(p[1])}月${parseInt(p[2])}日（${dn}）${time}〜`;
-      document.getElementById('tSelectedDatetime').style.display='block'; tUpdateBtn();
+    function tToggleTime(btn,time){
+      const idx=tPicks.findIndex(p=>p.time===time);
+      if(idx>=0){
+        tPicks.splice(idx,1);
+      } else if(tPicks.length<3){
+        tPicks.push({time,el:btn});
+      } else { return; }
+      tRenderPicks();
+    }
+
+    function tRenderPicks(){
+      document.querySelectorAll('.t-slot').forEach(b=>{b.classList.remove('pick1','pick2','pick3');b.querySelectorAll('.t-pick-label').forEach(l=>l.remove());});
+      tPicks.forEach((p,i)=>{
+        p.el.classList.add('pick'+(i+1));
+        const lbl=document.createElement('span');lbl.className='t-pick-label';lbl.textContent=T_LABELS[i];
+        p.el.appendChild(lbl);
+      });
+      const list=document.getElementById('tSelectedList');
+      if(tPicks.length>0){
+        const d=new Date(tSelectedDate);const dn=T_DAYS[d.getDay()];const ps=tSelectedDate.split('-');
+        const dateStr=`${ps[0]}年${parseInt(ps[1])}月${parseInt(ps[2])}日（${dn}）`;
+        list.innerHTML=tPicks.map((p,i)=>`<div style="padding:3px 0;${i>0?'opacity:0.8':'font-weight:600'}">${T_LABELS[i]}：${dateStr} ${p.time}〜</div>`).join('');
+        list.style.display='block';
+      } else { list.style.display='none'; }
+      tUpdateBtn();
     }
 
     function tUpdateBtn(){
       const b=document.getElementById('tSubmitBtn');
-      if(tSelectedDate&&tSelectedTime){b.disabled=false;b.textContent='お支払いに進む →';b.style.background='var(--color-tiffany)';b.style.color='#fff';b.style.cursor='pointer';b.style.boxShadow='0 8px 24px rgba(10,186,181,0.25)';}
-      else{b.disabled=true;b.textContent=tSelectedDate?'時間を選択してください':'日程を選択してください';b.style.background='var(--color-border)';b.style.color='var(--color-text-light)';b.style.cursor='not-allowed';b.style.boxShadow='none';}
+      if(tSelectedDate&&tPicks.length>0){b.disabled=false;b.textContent='お支払いに進む →';b.style.background='var(--color-tiffany)';b.style.color='#fff';b.style.cursor='pointer';b.style.boxShadow='0 8px 24px rgba(10,186,181,0.25)';}
+      else{b.disabled=true;b.textContent=tSelectedDate?'時間を選択してください（第1〜第3希望）':'日程を選択してください';b.style.background='var(--color-border)';b.style.color='var(--color-text-light)';b.style.cursor='not-allowed';b.style.boxShadow='none';}
     }
 
     async function submitTrainingBooking(){
-      if(!tSelectedDate||!tSelectedTime)return;
+      if(!tSelectedDate||tPicks.length===0)return;
       const name=document.getElementById('tName').value;
       const email=document.getElementById('tEmail').value;
       if(!name||!email){alert('お名前とメールアドレスは必須です。');return;}
+      const dateStr=tPicks.map((p,i)=>`${T_LABELS[i]}:${p.time}`).join(' / ');
       const b=document.getElementById('tSubmitBtn');b.disabled=true;b.innerHTML='<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.4);border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;vertical-align:middle;margin-right:8px;"></span>処理中...';
       try{
         const r=await fetch(`${T_API}/api/create-checkout-session`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
-          training_type:T_TYPE,training_date:`${tSelectedDate} ${tSelectedTime}`,
+          training_type:T_TYPE,training_date:`${tSelectedDate} ${tPicks[0].time} (${dateStr})`,
           customer_name:name,customer_email:email,customer_phone:document.getElementById('tPhone').value,sessions:1
         })});
         if(!r.ok){const e=await r.json();throw new Error(e.detail||'失敗');}

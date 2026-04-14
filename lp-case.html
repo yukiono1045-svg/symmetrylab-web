@@ -298,7 +298,7 @@
 
           <!-- 時間スロット -->
           <div class="lp-modal-section" id="timeSlotsSection" style="display:none;">
-            <label class="lp-modal-label">ご希望の時間 <span class="lp-modal-required">必須</span></label>
+            <label class="lp-modal-label">ご希望の時間（第1〜第3希望） <span class="lp-modal-required">第1希望必須</span></label>
             <div id="timeSlotsContainer"></div>
           </div>
 
@@ -352,11 +352,12 @@
     const SESSION_PRICE = 7000;
 
     let selectedDate = null;
-    let selectedTime = null;
+    let picks = []; // max 3: [{time, el}]
     let currentYear, currentMonth;
     let blockedDates = [];
     let bookingApplicantData = {};
     const DAY_NAMES = ['日', '月', '火', '水', '木', '金', '土'];
+    const PICK_LABELS = ['第1希望', '第2希望', '第3希望'];
 
     // ヒーローフォーム & ボトムフォームの送信ハンドラ
     function handleApplyFormSubmit(form, e) {
@@ -400,7 +401,7 @@
       error.style.display = 'none';
       loading.style.display = 'block';
       selectedDate = null;
-      selectedTime = null;
+      picks = [];
 
       // セッション数に応じた金額表示
       const totalPrice = SESSION_PRICE * sessions;
@@ -510,7 +511,7 @@
       document.querySelectorAll('.lp-calendar-cell').forEach(c => c.classList.remove('selected'));
       el.classList.add('selected');
       selectedDate = dateStr;
-      selectedTime = null;
+      picks = [];
       document.getElementById('modalSelectedDatetime').style.display = 'none';
       updateSubmitButton();
 
@@ -549,42 +550,62 @@
     }
 
     function selectTimeSlot(btn, time) {
-      document.querySelectorAll('.lp-time-slot').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      selectedTime = time;
+      const idx = picks.findIndex(p => p.time === time);
+      if (idx >= 0) {
+        picks.splice(idx, 1);
+      } else if (picks.length < 3) {
+        picks.push({time, el: btn});
+      } else { return; }
+      renderPicks();
+    }
 
-      const d = new Date(selectedDate);
-      const dayName = DAY_NAMES[d.getDay()];
-      const parts = selectedDate.split('-');
-      const display = `選択中: ${parts[0]}年${parseInt(parts[1])}月${parseInt(parts[2])}日（${dayName}）${time}〜`;
-
+    function renderPicks() {
+      document.querySelectorAll('.lp-time-slot').forEach(b => {
+        b.classList.remove('selected', 'pick1', 'pick2', 'pick3');
+        b.querySelectorAll('.pick-label').forEach(l => l.remove());
+      });
+      picks.forEach((p, i) => {
+        p.el.classList.add('pick' + (i + 1));
+        const lbl = document.createElement('span');
+        lbl.className = 'pick-label';
+        lbl.style.cssText = 'position:absolute;top:-8px;right:-4px;font-size:9px;font-weight:700;background:#fff;color:var(--lp-tiffany-dark);border:1px solid var(--lp-tiffany);border-radius:8px;padding:1px 6px;font-family:"Inter",sans-serif;';
+        lbl.textContent = PICK_LABELS[i];
+        p.el.appendChild(lbl);
+      });
       const el = document.getElementById('modalSelectedDatetime');
-      el.textContent = display;
-      el.style.display = 'block';
+      if (picks.length > 0) {
+        const d = new Date(selectedDate);
+        const dayName = DAY_NAMES[d.getDay()];
+        const parts = selectedDate.split('-');
+        const dateStr = `${parts[0]}年${parseInt(parts[1])}月${parseInt(parts[2])}日（${dayName}）`;
+        el.innerHTML = picks.map((p, i) => `<div style="padding:2px 0;${i > 0 ? 'opacity:0.8' : 'font-weight:600'}">${PICK_LABELS[i]}：${dateStr} ${p.time}〜</div>`).join('');
+        el.style.display = 'block';
+      } else { el.style.display = 'none'; }
       updateSubmitButton();
     }
 
     function updateSubmitButton() {
       const btn = document.getElementById('modalSubmitBtn');
-      if (selectedDate && selectedTime) {
+      if (selectedDate && picks.length > 0) {
         btn.disabled = false;
         btn.textContent = 'お支払いに進む →';
       } else {
         btn.disabled = true;
-        btn.textContent = selectedDate ? '時間を選択してください' : '日程を選択してください';
+        btn.textContent = selectedDate ? '時間を選択してください（第1〜第3希望）' : '日程を選択してください';
       }
     }
 
     async function submitBookingFromModal() {
-      if (!selectedDate || !selectedTime) return;
+      if (!selectedDate || picks.length === 0) return;
 
       const btn = document.getElementById('modalSubmitBtn');
       btn.disabled = true;
       btn.innerHTML = '<span class="lp-modal-spinner-inline"></span>処理中...';
 
+      const dateStr = picks.map((p, i) => `${PICK_LABELS[i]}:${p.time}`).join(' / ');
       const body = {
         training_type: TRAINING_TYPE,
-        training_date: `${selectedDate} ${selectedTime}`,
+        training_date: `${selectedDate} ${picks[0].time} (${dateStr})`,
         ...bookingApplicantData,
       };
 
