@@ -8,6 +8,8 @@ import os
 import smtplib
 import sqlite3
 import traceback
+import urllib.request
+import urllib.error
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -36,6 +38,9 @@ TRAINING_DATES_PATH = Path(__file__).parent / "training_dates.json"
 SMTP_EMAIL = os.getenv("SMTP_EMAIL", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", SMTP_EMAIL)
+
+# --- LINE設定 ---
+LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "")
 
 app = FastAPI(title="SYMMETRY Lab Booking API")
 
@@ -273,6 +278,98 @@ def send_booking_confirmation(metadata: dict, amount: int):
         send_email(ADMIN_EMAIL, admin_subject, admin_html)
 
 
+# --- LINE Messaging API ---
+def send_line_push(user_id: str, messages: list) -> bool:
+    """LINE Push API でメッセージ送信"""
+    if not LINE_CHANNEL_ACCESS_TOKEN or not user_id:
+        return False
+    try:
+        req = urllib.request.Request(
+            "https://api.line.me/v2/bot/message/push",
+            method="POST",
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {LINE_CHANNEL_ACCESS_TOKEN}",
+            },
+            data=json.dumps({"to": user_id, "messages": messages}).encode("utf-8"),
+        )
+        with urllib.request.urlopen(req, timeout=10) as res:
+            res.read()
+        print(f"[LINE送信成功] → {user_id}")
+        return True
+    except Exception as e:
+        print(f"[LINE送信失敗] {e}")
+        traceback.print_exc()
+        return False
+
+
+def send_line_booking_notification(metadata: dict, amount: int):
+    """予約完了後、LINEトークに確認メッセージ送信"""
+    company = metadata.get("customer_company", "")
+    if not company.startswith("LINE:"):
+        return
+    user_id = company.replace("LINE:", "").strip()
+    if not user_id:
+        return
+
+    customer_name = metadata.get("customer_name", "")
+    training_name = metadata.get("training_name", "")
+    training_date = metadata.get("training_date", "")
+    sessions = metadata.get("sessions", "1")
+
+    bubble = {
+        "type": "bubble",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": "#0ABAB5",
+            "paddingAll": "16px",
+            "contents": [
+                {"type": "text", "text": "予約完了", "color": "#FFFFFF", "weight": "bold", "size": "lg"},
+                {"type": "text", "text": "SYMMETRY Lab", "color": "#E6F7F6", "size": "xs", "margin": "sm"},
+            ],
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "paddingAll": "16px",
+            "contents": [
+                {"type": "text", "text": f"{customer_name} 様", "weight": "bold", "size": "md"},
+                {"type": "text", "text": "お申込みありがとうございます。", "size": "sm", "color": "#6B7280", "margin": "sm", "wrap": True},
+                {"type": "separator", "margin": "lg"},
+                {
+                    "type": "box", "layout": "vertical", "margin": "lg", "spacing": "sm",
+                    "contents": [
+                        {"type": "box", "layout": "baseline", "contents": [
+                            {"type": "text", "text": "プログラム", "size": "xs", "color": "#6B7280", "flex": 3},
+                            {"type": "text", "text": training_name, "size": "xs", "flex": 5, "wrap": True, "weight": "bold"},
+                        ]},
+                        {"type": "box", "layout": "baseline", "contents": [
+                            {"type": "text", "text": "希望日時", "size": "xs", "color": "#6B7280", "flex": 3},
+                            {"type": "text", "text": training_date, "size": "xs", "flex": 5, "wrap": True, "weight": "bold"},
+                        ]},
+                        {"type": "box", "layout": "baseline", "contents": [
+                            {"type": "text", "text": "セッション数", "size": "xs", "color": "#6B7280", "flex": 3},
+                            {"type": "text", "text": f"{sessions}回", "size": "xs", "flex": 5, "weight": "bold"},
+                        ]},
+                        {"type": "box", "layout": "baseline", "contents": [
+                            {"type": "text", "text": "お支払い", "size": "xs", "color": "#6B7280", "flex": 3},
+                            {"type": "text", "text": f"¥{amount:,}", "size": "sm", "flex": 5, "weight": "bold", "color": "#0ABAB5"},
+                        ]},
+                    ],
+                },
+                {"type": "separator", "margin": "lg"},
+                {"type": "text", "text": "担当者より24時間以内にご連絡いたします。", "size": "xs", "color": "#6B7280", "margin": "lg", "wrap": True},
+            ],
+        },
+    }
+
+    messages = [
+        {"type": "flex", "altText": f"{training_name} お申込み完了", "contents": bubble},
+    ]
+    send_line_push(user_id, messages)
+
+
 # --- APIエンドポイント ---
 @app.get("/api/available-dates")
 async def get_available_dates(training_type: str, date: str = ""):
@@ -407,6 +504,9 @@ async def confirm_booking(session_id: str):
         # 確認メール送信
         amount = session_data.get("amount_total", 0)
         send_booking_confirmation(session_data["metadata"], amount)
+
+        # LINE通知送信（LINE経由の予約のみ）
+        send_line_booking_notification(session_data["metadata"], amount)
 
         return {"status": "ok", "message": "予約を記録しました"}
     except stripe.error.StripeError as e:

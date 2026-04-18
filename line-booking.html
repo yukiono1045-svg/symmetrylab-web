@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>予約 | SYMMETRY Lab</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <style>
+    :root {
+      --tiffany: #0ABAB5;
+      --tiffany-dark: #058A85;
+      --tiffany-light: #7FD8D4;
+      --tiffany-bg: #E6F7F6;
+      --gray-900: #1F2937;
+      --gray-700: #4B5563;
+      --gray-500: #6B7280;
+      --gray-300: #D1D5DB;
+      --gray-200: #E5E7EB;
+      --gray-100: #F3F4F6;
+      --gray-50: #F9FAFB;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Inter", "Noto Sans JP", sans-serif;
+      color: var(--gray-900);
+      background: var(--gray-100);
+      line-height: 1.7;
+      font-feature-settings: "palt";
+      -webkit-font-smoothing: antialiased;
+    }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px 16px; }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border-top: 3px solid var(--tiffany);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.01em; }
+    .subtitle { font-size: 12px; color: var(--gray-500); margin-bottom: 16px; }
+    .profile {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px; background: var(--tiffany-bg); border-radius: 8px; margin-bottom: 16px;
+    }
+    .profile img { width: 40px; height: 40px; border-radius: 50%; }
+    .profile-name { font-size: 13px; font-weight: 600; }
+    .profile-label { font-size: 10px; color: var(--gray-500); }
+
+    /* 研修タイプ選択 */
+    .type-selector {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px;
+    }
+    .type-btn {
+      padding: 14px 10px; border: 2px solid var(--gray-200); border-radius: 8px;
+      background: #fff; cursor: pointer; text-align: center; font-family: inherit;
+      transition: all 0.2s;
+    }
+    .type-btn.active { border-color: var(--tiffany); background: var(--tiffany-bg); }
+    .type-btn-name { font-size: 13px; font-weight: 600; color: var(--gray-900); margin-bottom: 2px; }
+    .type-btn-price { font-size: 11px; color: var(--tiffany-dark); font-weight: 500; }
+
+    /* セクション */
+    .section-label {
+      display: block; font-size: 11px; font-weight: 600; color: var(--gray-500);
+      letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px;
+    }
+    .required { color: var(--tiffany-dark); font-size: 10px; margin-left: 6px; }
+    .required::before { content: '● '; color: var(--tiffany); font-size: 8px; }
+
+    /* カレンダー */
+    .cal {
+      border: 1px solid var(--gray-200); border-radius: 8px; overflow: hidden;
+    }
+    .cal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 14px; background: var(--gray-900); color: #fff;
+    }
+    .cal-header span { font-weight: 600; font-size: 13px; }
+    .cal-nav {
+      background: none; border: 1px solid rgba(255,255,255,0.2); color: #fff;
+      width: 26px; height: 26px; border-radius: 4px; cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; justify-content: center; padding: 0;
+    }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+    .cal-day-label {
+      text-align: center; font-size: 10px; font-weight: 600;
+      padding: 8px 0; background: var(--gray-50); color: var(--gray-500);
+    }
+    .cal-day-label:first-child { color: #DC2626; }
+    .cal-day-label:last-child { color: #2563EB; }
+    .cal-cell {
+      text-align: center; padding: 10px 0; font-size: 12px;
+      color: var(--gray-300); border-top: 1px solid var(--gray-100); cursor: default;
+    }
+    .cal-cell.active { color: var(--gray-900); cursor: pointer; font-weight: 500; }
+    .cal-cell.active:hover, .cal-cell.active:active { background: var(--tiffany-bg); color: var(--tiffany-dark); }
+    .cal-cell.selected { background: var(--tiffany); color: #fff; font-weight: 700; }
+    .cal-cell.sunday.active { color: #DC2626; }
+    .cal-cell.saturday.active { color: #2563EB; }
+    .cal-cell.sunday.selected, .cal-cell.saturday.selected { color: #fff; }
+
+    /* 時間スロット */
+    .slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+    .slot {
+      padding: 10px 4px; border: 1px solid var(--gray-200); border-radius: 6px;
+      background: #fff; cursor: pointer; text-align: center; font-family: inherit;
+      transition: all 0.2s; position: relative;
+    }
+    .slot:hover, .slot:active { border-color: var(--tiffany); background: var(--tiffany-bg); }
+    .slot-time { display: block; font-size: 13px; font-weight: 600; font-family: Inter, sans-serif; }
+    .slot-remain { display: block; font-size: 9px; color: var(--gray-500); margin-top: 1px; }
+    .slots-loading, .slots-empty { text-align: center; padding: 14px; font-size: 11px; color: var(--gray-500); }
+
+    /* 現在の選択表示 */
+    .current-pick {
+      background: var(--tiffany-bg); border-left: 2px solid var(--tiffany);
+      padding: 10px 12px; font-size: 11px; color: var(--tiffany-dark);
+      font-weight: 600; margin-bottom: 12px; border-radius: 2px;
+    }
+
+    /* 希望リスト */
+    .picks-list { margin-bottom: 16px; }
+    .pick-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; margin-bottom: 6px; border-radius: 6px; font-size: 12px;
+    }
+    .pick-item.p1 { background: var(--tiffany); color: #fff; }
+    .pick-item.p2 { background: var(--tiffany-dark); color: #fff; }
+    .pick-item.p3 { background: var(--tiffany-light); color: var(--gray-900); }
+    .pick-label { font-weight: 700; min-width: 56px; font-size: 11px; }
+    .pick-content { flex: 1; }
+    .pick-remove {
+      background: none; border: none; cursor: pointer; font-size: 18px;
+      padding: 0 4px; opacity: 0.85; color: inherit;
+    }
+    .picks-empty {
+      font-size: 11px; color: var(--gray-500); text-align: center;
+      padding: 16px; border: 1px dashed var(--gray-300); border-radius: 6px;
+    }
+    .picks-hint {
+      font-size: 10px; color: var(--gray-500); margin-top: 6px; text-align: center;
+    }
+
+    /* サマリ */
+    .summary {
+      background: var(--gray-50); border-left: 2px solid var(--tiffany);
+      padding: 12px 14px; margin-bottom: 16px; border-radius: 2px;
+    }
+    .summary-row {
+      display: flex; justify-content: space-between; padding: 3px 0; font-size: 12px;
+    }
+    .summary-row.total {
+      border-top: 1px solid var(--gray-200); margin-top: 4px; padding-top: 8px;
+    }
+    .summary-total-value {
+      font-size: 20px; font-weight: 300; color: var(--tiffany-dark);
+      font-family: Inter, sans-serif; letter-spacing: -0.02em;
+    }
+
+    /* フォーム */
+    .form-group { margin-bottom: 14px; }
+    .form-label {
+      display: block; font-size: 11px; font-weight: 600;
+      color: var(--gray-500); margin-bottom: 6px; letter-spacing: 0.08em;
+    }
+    .form-input, .form-select {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--gray-300);
+      border-radius: 4px; font-size: 14px; font-family: inherit;
+      background: #fff; -webkit-appearance: none; appearance: none;
+    }
+    .form-select {
+      background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 12px;
+      padding-right: 30px;
+    }
+    .form-input:focus, .form-select:focus { outline: none; border-color: var(--tiffany); }
+
+    /* ボタン */
+    .btn-submit {
+      width: 100%; background: var(--tiffany); color: #fff; border: none;
+      padding: 14px; border-radius: 4px; font-size: 14px; font-weight: 600;
+      letter-spacing: 0.05em; cursor: pointer; transition: all 0.3s;
+      box-shadow: 0 6px 16px rgba(10,186,181,0.25); font-family: inherit;
+    }
+    .btn-submit:hover:not(:disabled), .btn-submit:active:not(:disabled) {
+      background: var(--tiffany-dark);
+    }
+    .btn-submit:disabled {
+      background: var(--gray-300); color: var(--gray-500);
+      cursor: not-allowed; box-shadow: none;
+    }
+    .note { text-align: center; font-size: 10px; color: var(--gray-500); margin-top: 8px; }
+
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.4); border-top-color: #fff;
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading-overlay {
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px 20px; text-align: center;
+    }
+    .loading-overlay .spinner-big {
+      width: 32px; height: 32px; border: 3px solid var(--gray-200);
+      border-top-color: var(--tiffany); border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .error-msg {
+      text-align: center; padding: 40px 20px; color: #DC2626; font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div id="loadingView" class="loading-overlay">
+    <div>
+      <div class="spinner-big" style="margin:0 auto 12px;"></div>
+      <p style="font-size:12px;color:var(--gray-500);">読み込み中...</p>
+    </div>
+  </div>
+
+  <div id="errorView" class="error-msg" style="display:none;">
+    エラーが発生しました。LINEアプリから再度アクセスしてください。
+  </div>
+
+  <div id="mainView" style="display:none;">
+    <!-- プロフィール表示 -->
+    <div id="profileCard" class="profile" style="display:none;">
+      <img id="profilePic" src="" alt="">
+      <div>
+        <div class="profile-name" id="profileName">-</div>
+        <div class="profile-label">LINEアカウントでログイン中</div>
+      </div>
+    </div>
+
+    <!-- 研修タイプ選択 -->
+    <div class="card">
+      <h1>予約内容の選択</h1>
+      <p class="subtitle">ご希望のプログラムを選んでください</p>
+      <div class="type-selector">
+        <button type="button" class="type-btn active" data-type="case_interview" onclick="selectType(this)">
+          <div class="type-btn-name">ケース面接対策</div>
+          <div class="type-btn-price">¥7,000 / 60min</div>
+        </button>
+        <button type="button" class="type-btn" data-type="practical_skills" onclick="selectType(this)">
+          <div class="type-btn-name">実践スキル研修</div>
+          <div class="type-btn-price">¥15,000 / 各日</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- カレンダー -->
+    <div class="card">
+      <label class="section-label">ご希望の日程<span class="required">必須</span></label>
+      <div class="cal">
+        <div class="cal-header">
+          <button type="button" class="cal-nav" onclick="changeMonth(-1)">‹</button>
+          <span id="calMonthLabel"></span>
+          <button type="button" class="cal-nav" onclick="changeMonth(1)">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+      <div id="currentPick" class="current-pick" style="display:none;margin-top:12px;"></div>
+      <div id="timeSection" style="display:none;margin-top:12px;">
+        <label class="section-label">時間を選択</label>
+        <div id="timeContainer"></div>
+      </div>
+    </div>
+
+    <!-- 希望リスト -->
+    <div class="card">
+      <label class="section-label">選択済み（第1〜第3希望）</label>
+      <div class="picks-list" id="picksList"></div>
+    </div>
+
+    <!-- セッション数（ケース面接のみ） -->
+    <div class="card" id="sessionCard">
+      <label class="section-label">ご希望セッション数<span class="required">必須</span></label>
+      <select class="form-select" id="sessions" onchange="updateSummary()">
+        <option value="1">1セッション（¥7,000）</option>
+        <option value="3">3セッション（¥21,000）</option>
+        <option value="5">5セッション（¥35,000）</option>
+        <option value="10">10セッション（¥70,000）</option>
+      </select>
+    </div>
+
+    <!-- サマリ -->
+    <div class="card">
+      <label class="section-label">お申込み内容</label>
+      <div class="summary">
+        <div class="summary-row">
+          <span style="color:var(--gray-500);">プログラム</span>
+          <span style="font-weight:600;" id="summaryName">ケース面接対策</span>
+        </div>
+        <div class="summary-row" id="summarySessionRow">
+          <span style="color:var(--gray-500);">セッション数</span>
+          <span style="font-weight:600;" id="summarySessions">1</span>
+        </div>
+        <div class="summary-row total">
+          <span style="color:var(--gray-500);">合計金額</span>
+          <span class="summary-total-value" id="summaryTotal">¥7,000</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">お名前<span class="required">必須</span></label>
+        <input type="text" class="form-input" id="customerName" placeholder="山田 太郎" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">メールアドレス<span class="required">必須</span></label>
+        <input type="email" class="form-input" id="customerEmail" placeholder="example@email.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">電話番号</label>
+        <input type="tel" class="form-input" id="customerPhone" placeholder="090-1234-5678">
+      </div>
+
+      <button type="button" id="submitBtn" class="btn-submit" disabled onclick="submitBooking()">
+        日程を選択してください
+      </button>
+      <p class="note">Stripeの安全な決済画面に移動します</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const LIFF_ID = '2009829027-8HjCFMVz';
+  const API_BASE = window.location.origin;
+
+  // 状態管理
+  let liffProfile = null;
+  let currentType = 'case_interview';
+  let trainingInfo = {
+    case_interview: { price: 7000, name: 'ケース面接対策' },
+    practical_skills: { price: 15000, name: '実践スキル研修' }
+  };
+  let selectedDate = null;
+  let picks = []; // [{date, time}] max 3
+  let currentYear, currentMonth;
+  let availableDates = [];
+  const DAY_NAMES = ['日','月','火','水','木','金','土'];
+  const PICK_LABELS = ['第1希望','第2希望','第3希望'];
+
+  function dateLabel(ds) {
+    const d = new Date(ds);
+    const p = ds.split('-');
+    return `${parseInt(p[1])}/${parseInt(p[2])}（${DAY_NAMES[d.getDay()]}）`;
+  }
+
+  // LIFF初期化
+  async function initLiff() {
+    try {
+      await liff.init({ liffId: LIFF_ID });
+      if (!liff.isLoggedIn()) {
+        liff.login();
+        return;
+      }
+
+      try {
+        liffProfile = await liff.getProfile();
+        document.getElementById('profilePic').src = liffProfile.pictureUrl || '';
+        document.getElementById('profileName').textContent = liffProfile.displayName || '';
+        document.getElementById('profileCard').style.display = 'flex';
+        const nameField = document.getElementById('customerName');
+        if (!nameField.value && liffProfile.displayName) {
+          nameField.value = liffProfile.displayName;
+        }
+      } catch (e) {
+        console.log('Profile取得失敗（デスクトップ確認時は正常）');
+      }
+
+      await loadAvailableDates();
+      document.getElementById('loadingView').style.display = 'none';
+      document.getElementById('mainView').style.display = 'block';
+    } catch (err) {
+      console.error('LIFF Init error:', err);
+      document.getElementById('loadingView').style.display = 'none';
+      document.getElementById('errorView').style.display = 'block';
+    }
+  }
+
+  async function loadAvailableDates() {
+    try {
+      const r = await fetch(`${API_BASE}/api/available-dates?training_type=${currentType}`);
+      const data = await r.json();
+      availableDates = data.available_dates || [];
+      const now = new Date();
+      currentYear = now.getFullYear();
+      currentMonth = now.getMonth();
+      renderCalendar();
+      renderPicksList();
+      updateSummary();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function selectType(btn) {
+    document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentType = btn.dataset.type;
+    picks = [];
+    selectedDate = null;
+    document.getElementById('sessionCard').style.display = currentType === 'case_interview' ? 'block' : 'none';
+    loadAvailableDates();
+  }
+
+  function renderCalendar() {
+    const g = document.getElementById('calGrid');
+    g.innerHTML = '';
+    document.getElementById('calMonthLabel').textContent = `${currentYear}年${currentMonth+1}月`;
+    DAY_NAMES.forEach(d => {
+      const el = document.createElement('div');
+      el.className = 'cal-day-label';
+      el.textContent = d;
+      g.appendChild(el);
+    });
+    const first = new Date(currentYear, currentMonth, 1).getDay();
+    const days = new Date(currentYear, currentMonth+1, 0).getDate();
+    const today = new Date(); today.setHours(0,0,0,0);
+    for (let i = 0; i < first; i++) {
+      const el = document.createElement('div');
+      el.className = 'cal-cell';
+      g.appendChild(el);
+    }
+    for (let d = 1; d <= days; d++) {
+      const el = document.createElement('div');
+      const date = new Date(currentYear, currentMonth, d);
+      const ds = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const dow = date.getDay();
+      el.className = 'cal-cell';
+      el.textContent = d;
+      if (dow === 0) el.classList.add('sunday');
+      if (dow === 6) el.classList.add('saturday');
+      const isAvail = availableDates.length === 0 || availableDates.includes(ds);
+      if (date >= today && isAvail) {
+        el.classList.add('active');
+        el.addEventListener('click', () => selectDate(el, ds));
+      }
+      if (selectedDate === ds) el.classList.add('selected');
+      g.appendChild(el);
+    }
+  }
+
+  function changeMonth(delta) {
+    currentMonth += delta;
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    renderCalendar();
+  }
+
+  async function selectDate(el, ds) {
+    if (picks.length >= 3) {
+      alert('第3希望まで選択済みです。変更する場合は×で削除してください。');
+      return;
+    }
+    document.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedDate = ds;
+    document.getElementById('currentPick').textContent = `${PICK_LABELS[picks.length]}の日程: ${dateLabel(ds)} — 時間を選択してください`;
+    document.getElementById('currentPick').style.display = 'block';
+    const sec = document.getElementById('timeSection');
+    const con = document.getElementById('timeContainer');
+    sec.style.display = 'block';
+    con.innerHTML = '<p class="slots-loading">時間枠を取得中...</p>';
+    try {
+      const r = await fetch(`${API_BASE}/api/available-dates?training_type=${currentType}&date=${ds}`);
+      const data = await r.json();
+      con.innerHTML = '';
+      if (!data.time_slots || data.time_slots.length === 0) {
+        con.innerHTML = '<p class="slots-empty">この日は予約可能な時間がありません</p>';
+        return;
+      }
+      const grid = document.createElement('div');
+      grid.className = 'slots';
+      data.time_slots.forEach(s => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'slot';
+        b.innerHTML = `<span class="slot-time">${s.time}</span><span class="slot-remain">残り${s.slots_remaining}席</span>`;
+        b.addEventListener('click', () => addPick(ds, s.time));
+        grid.appendChild(b);
+      });
+      con.appendChild(grid);
+    } catch (err) {
+      con.innerHTML = '<p class="slots-empty" style="color:#DC2626;">取得失敗</p>';
+    }
+  }
+
+  function addPick(date, time) {
+    if (picks.length >= 3) return;
+    if (picks.some(p => p.date === date && p.time === time)) {
+      alert('同じ日時が既に選択されています。');
+      return;
+    }
+    picks.push({ date, time });
+    renderPicksList();
+    document.getElementById('timeSection').style.display = 'none';
+    document.getElementById('currentPick').style.display = 'none';
+    document.querySelectorAll('.cal-cell').forEach(c => c.classList.remove('selected'));
+    selectedDate = null;
+  }
+
+  function removePick(idx) {
+    picks.splice(idx, 1);
+    renderPicksList();
+  }
+
+  function renderPicksList() {
+    const list = document.getElementById('picksList');
+    if (picks.length === 0) {
+      list.innerHTML = '<p class="picks-empty">カレンダーから日程と時間を選択してください（第1〜第3希望）</p>';
+    } else {
+      list.innerHTML = picks.map((p, i) =>
+        `<div class="pick-item p${i+1}">
+          <span class="pick-label">${PICK_LABELS[i]}</span>
+          <span class="pick-content">${dateLabel(p.date)} ${p.time}〜</span>
+          <button class="pick-remove" onclick="removePick(${i})">×</button>
+        </div>`
+      ).join('');
+      if (picks.length < 3) {
+        list.innerHTML += `<p class="picks-hint">カレンダーから${PICK_LABELS[picks.length]}を追加できます</p>`;
+      }
+    }
+    updateSubmitBtn();
+  }
+
+  function updateSummary() {
+    const info = trainingInfo[currentType];
+    document.getElementById('summaryName').textContent = info.name;
+    const sessions = currentType === 'case_interview' ? parseInt(document.getElementById('sessions').value) : 1;
+    const total = info.price * sessions;
+    document.getElementById('summarySessions').textContent = `${sessions}セッション`;
+    document.getElementById('summaryTotal').textContent = `¥${total.toLocaleString()}`;
+    document.getElementById('summarySessionRow').style.display = currentType === 'case_interview' ? 'flex' : 'none';
+    updateSubmitBtn();
+  }
+
+  function updateSubmitBtn() {
+    const btn = document.getElementById('submitBtn');
+    if (picks.length > 0) {
+      btn.disabled = false;
+      btn.textContent = 'お支払いに進む →';
+    } else {
+      btn.disabled = true;
+      btn.textContent = '日程・時間を選択してください';
+    }
+  }
+
+  async function submitBooking() {
+    if (picks.length === 0) return;
+    const name = document.getElementById('customerName').value.trim();
+    const email = document.getElementById('customerEmail').value.trim();
+    if (!name || !email) { alert('お名前とメールアドレスは必須です。'); return; }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>処理中...';
+
+    const dateStr = picks.map((p, i) => `${PICK_LABELS[i]}:${dateLabel(p.date)}${p.time}`).join(' / ');
+    const lineUserId = liffProfile ? liffProfile.userId : '';
+    const sessions = currentType === 'case_interview' ? parseInt(document.getElementById('sessions').value) : 1;
+
+    try {
+      const r = await fetch(`${API_BASE}/api/create-checkout-session`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          training_type: currentType,
+          training_date: `${picks[0].date} ${picks[0].time} (${dateStr})`,
+          customer_name: name,
+          customer_email: email,
+          customer_phone: document.getElementById('customerPhone').value,
+          customer_company: lineUserId ? `LINE:${lineUserId}` : '',
+          sessions: sessions
+        })
+      });
+      if (!r.ok) {
+        const err = await r.json();
+        throw new Error(err.detail || '決済セッション作成失敗');
+      }
+      const data = await r.json();
+      // LIFF内ブラウザでStripe Checkoutを開く
+      if (liff.isInClient && liff.isInClient()) {
+        liff.openWindow({ url: data.checkout_url, external: false });
+      } else {
+        window.location.href = data.checkout_url;
+      }
+    } catch (err) {
+      alert(err.message);
+      btn.disabled = false;
+      btn.textContent = 'お支払いに進む →';
+    }
+  }
+
+  // 起動
+  window.addEventListener('DOMContentLoaded', initLiff);
+</script>
+</body>
+</html>
