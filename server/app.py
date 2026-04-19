@@ -32,7 +32,13 @@ stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 ADMIN_KEY = os.getenv("ADMIN_KEY", "symmetry-admin-2026")
 DB_PATH = os.getenv("DB_PATH", "bookings.db")
-TRAINING_DATES_PATH = Path(__file__).parent / "training_dates.json"
+DEFAULT_TRAINING_DATES = Path(__file__).parent / "training_dates.json"
+TRAINING_DATES_PATH = Path(os.getenv("TRAINING_DATES_PATH", str(DEFAULT_TRAINING_DATES)))
+
+# 永続ディスク側にファイルが無ければ、初回起動時にリポジトリ同梱のデフォルトをコピー
+if not TRAINING_DATES_PATH.exists() and DEFAULT_TRAINING_DATES.exists():
+    TRAINING_DATES_PATH.parent.mkdir(parents=True, exist_ok=True)
+    TRAINING_DATES_PATH.write_text(DEFAULT_TRAINING_DATES.read_text(encoding="utf-8"), encoding="utf-8")
 
 # --- メール設定 ---
 SMTP_EMAIL = os.getenv("SMTP_EMAIL", "")
@@ -61,6 +67,7 @@ class CheckoutRequest(BaseModel):
     customer_phone: str = ""
     customer_company: str = ""
     sessions: int = 1
+    booking_notes: str = ""  # 第1〜第3希望など補足情報（Stripe metadataへ退避）
 
 
 # --- SQLite ---
@@ -85,11 +92,13 @@ def init_db():
             customer_phone TEXT,
             customer_company TEXT,
             amount INTEGER,
-            payment_status TEXT DEFAULT '完了',
+            payment_status TEXT DEFAULT 'paid',
             stripe_session_id TEXT UNIQUE,
             notes TEXT DEFAULT ''
         )
     """)
+    conn.execute("UPDATE bookings SET payment_status = 'paid' WHERE payment_status = '完了'")
+    conn.execute("UPDATE bookings SET created_at = REPLACE(created_at, '/', '-') WHERE created_at LIKE '____/__/__%'")
     conn.commit()
     conn.close()
 
@@ -111,10 +120,10 @@ def save_booking(session_data: dict):
             (booking_id, created_at, training_type, training_name, training_date,
              customer_name, customer_email, customer_phone, customer_company,
              amount, payment_status, stripe_session_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '完了', ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'paid', ?)
         """, (
             short_id,
-            datetime.now().strftime("%Y/%m/%d %H:%M"),
+            datetime.now().strftime("%Y-%m-%d %H:%M"),
             metadata.get("training_type", ""),
             metadata.get("training_name", ""),
             metadata.get("training_date", ""),
@@ -132,9 +141,19 @@ def save_booking(session_data: dict):
         conn.close()
 
 
+def resolve_training(training_type: str, data: dict | None = None):
+    """case_interview_new/mid → case_interview へのフォールバックを一元化"""
+    if data is None:
+        data = load_training_dates()
+    training = data.get(training_type)
+    if not training and training_type in ("case_interview_new", "case_interview_mid"):
+        training = data.get("case_interview")
+    return training
+
+
 def count_bookings_for_date(training_type: str, date: str) -> int:
-    data = load_training_dates()
-    type_name = data.get(training_type, {}).get("name", "")
+    training = resolve_training(training_type)
+    type_name = training.get("name", "") if training else ""
     conn = get_db()
     cursor = conn.execute(
         "SELECT COUNT(*) FROM bookings WHERE training_name = ? AND training_date = ?",
@@ -373,10 +392,7 @@ def send_line_booking_notification(metadata: dict, amount: int):
 # --- APIエンドポイント ---
 @app.get("/api/available-dates")
 async def get_available_dates(training_type: str, date: str = ""):
-    data = load_training_dates()
-    training = data.get(training_type)
-    if not training and training_type in ("case_interview_new", "case_interview_mid"):
-        training = data.get("case_interview")
+    training = resolve_training(training_type)
     if not training:
         raise HTTPException(status_code=404, detail="研修種別が見つかりません")
 
@@ -417,29 +433,44 @@ async def get_available_dates(training_type: str, date: str = ""):
 
 @app.post("/api/create-checkout-session")
 async def create_checkout_session(req: CheckoutRequest):
-    data = load_training_dates()
-    training = data.get(req.training_type)
-    if not training and req.training_type in ("case_interview_new", "case_interview_mid"):
-        training = data.get("case_interview")
+    # 入力の基本バリデーション（サーバ側でのリクエスト内容を必ずログに出す）
+    print(f"[checkout] type={req.training_type} date={req.training_date!r} email={req.customer_email} sessions={req.sessions} notes_len={len(req.booking_notes)}")
+
+    if not stripe.api_key:
+        raise HTTPException(status_code=400, detail="サーバ設定エラー: 決済サービスが未設定です。管理者へお問い合わせください。")
+    if not BASE_URL or not BASE_URL.startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="サーバ設定エラー: BASE_URLが正しく設定されていません。")
+    if not req.customer_email or "@" not in req.customer_email:
+        raise HTTPException(status_code=400, detail="メールアドレスの形式が正しくありません。")
+    if not req.customer_name.strip():
+        raise HTTPException(status_code=400, detail="お名前が空です。")
+
+    training = resolve_training(req.training_type)
     if not training:
-        raise HTTPException(status_code=400, detail="無効な研修種別です")
+        raise HTTPException(status_code=400, detail=f"無効な研修種別です: {req.training_type}")
 
     avail_slots = training.get("available_slots", {})
+    # training_date は "2026-04-25 14:00" 形式を前提。先頭の日付のみ抽出
     date_part = req.training_date.split(" ")[0] if " " in req.training_date else req.training_date
     if avail_slots and date_part not in avail_slots:
-        raise HTTPException(status_code=400, detail="この日程は予約できません")
+        raise HTTPException(status_code=400, detail=f"この日程は予約可能日として設定されていません（{date_part}）")
 
     booked = count_bookings_for_date(req.training_type, req.training_date)
     if booked >= training["max_capacity"]:
         raise HTTPException(status_code=400, detail="この日程は定員に達しています")
 
-    date_label = req.training_date
-
     qty = max(1, int(req.sessions))
     total_price = training["price"] * qty
-    name_with_qty = f"{training['name']} - {date_label}"
+
+    # Stripe product name は250文字制限。日時部分だけを載せ、希望一覧は metadata へ
+    name_with_qty = f"{training['name']} - {req.training_date}"
     if qty > 1:
         name_with_qty += f"（{qty}セッション）"
+    if len(name_with_qty) > 240:
+        name_with_qty = name_with_qty[:237] + "..."
+
+    # Stripe metadataは各value 500文字制限。booking_notesは念のため切り詰め
+    notes = (req.booking_notes or "")[:490]
 
     try:
         session = stripe.checkout.Session.create(
@@ -469,11 +500,20 @@ async def create_checkout_session(req: CheckoutRequest):
                 "customer_company": req.customer_company,
                 "price": str(total_price),
                 "sessions": str(qty),
+                "booking_notes": notes,
             }
         )
+        print(f"[checkout] OK session={session.id}")
         return {"checkout_url": session.url}
     except stripe.error.StripeError as e:
-        raise HTTPException(status_code=500, detail=f"決済セッションの作成に失敗: {str(e)}")
+        print(f"[checkout] StripeError: {type(e).__name__}: {e}")
+        traceback.print_exc()
+        # Stripeエラーは設定/入力起因が多いので400で返してUI側で文言を出せるように
+        raise HTTPException(status_code=400, detail=f"決済セッションの作成に失敗しました: {str(e)}")
+    except Exception as e:
+        print(f"[checkout] Unexpected: {type(e).__name__}: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"予期しないエラーが発生しました: {str(e)}")
 
 
 @app.get("/api/confirm-booking")
