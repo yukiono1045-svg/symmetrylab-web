@@ -103,7 +103,8 @@ def init_db():
     conn.close()
 
 
-def save_booking(session_data: dict):
+def save_booking(session_data: dict) -> bool:
+    """予約をDBに保存。新規挿入時True、既存（重複）ならFalseを返す"""
     metadata = session_data.get("metadata", {})
     session_id = session_data.get("id", "")
     short_id = session_id[-8:] if session_id else ""
@@ -135,8 +136,12 @@ def save_booking(session_data: dict):
             session_id,
         ))
         conn.commit()
-        if conn.total_changes > 0:
+        inserted = conn.total_changes > 0
+        if inserted:
             print(f"[予約保存] {metadata.get('customer_name', '')} - {metadata.get('training_name', '')} ({metadata.get('training_date', '')})")
+        else:
+            print(f"[予約スキップ] session_id={session_id} は既に記録済み")
+        return inserted
     finally:
         conn.close()
 
@@ -538,17 +543,17 @@ async def confirm_booking(session_id: str):
                 "price": md["price"] if "price" in md else "0",
             }
         }
-        save_booking(session_data)
-        print(f"[予約確認] session_id={session_id} -> DB記録完了")
+        inserted = save_booking(session_data)
+        print(f"[予約確認] session_id={session_id} inserted={inserted}")
 
-        # 確認メール送信
-        amount = session_data.get("amount_total", 0)
-        send_booking_confirmation(session_data["metadata"], amount)
-
-        # LINE通知送信（LINE経由の予約のみ）
-        send_line_booking_notification(session_data["metadata"], amount)
-
-        return {"status": "ok", "message": "予約を記録しました"}
+        # 新規予約のときのみ通知送信（confirm-booking多重呼び出し対策）
+        if inserted:
+            amount = session_data.get("amount_total", 0)
+            send_booking_confirmation(session_data["metadata"], amount)
+            send_line_booking_notification(session_data["metadata"], amount)
+            return {"status": "ok", "message": "予約を記録しました"}
+        else:
+            return {"status": "ok", "message": "予約は既に記録済みです", "already_recorded": True}
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=f"セッション情報の取得に失敗: {str(e)}")
 
