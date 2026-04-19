@@ -15,6 +15,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from io import BytesIO
 from pathlib import Path
+from typing import Optional
 
 import openpyxl
 import stripe
@@ -36,9 +37,14 @@ DEFAULT_TRAINING_DATES = Path(__file__).parent / "training_dates.json"
 TRAINING_DATES_PATH = Path(os.getenv("TRAINING_DATES_PATH", str(DEFAULT_TRAINING_DATES)))
 
 # 永続ディスク側にファイルが無ければ、初回起動時にリポジトリ同梱のデフォルトをコピー
-if not TRAINING_DATES_PATH.exists() and DEFAULT_TRAINING_DATES.exists():
-    TRAINING_DATES_PATH.parent.mkdir(parents=True, exist_ok=True)
-    TRAINING_DATES_PATH.write_text(DEFAULT_TRAINING_DATES.read_text(encoding="utf-8"), encoding="utf-8")
+# （失敗しても起動は継続する — 書き込み不可な環境でも最低限デフォルトをロードして動作させる）
+try:
+    if not TRAINING_DATES_PATH.exists() and DEFAULT_TRAINING_DATES.exists():
+        TRAINING_DATES_PATH.parent.mkdir(parents=True, exist_ok=True)
+        TRAINING_DATES_PATH.write_text(DEFAULT_TRAINING_DATES.read_text(encoding="utf-8"), encoding="utf-8")
+except Exception as _e:
+    print(f"[起動] training_dates.json の永続化領域への初期化に失敗（デフォルトを使用）: {_e}")
+    TRAINING_DATES_PATH = DEFAULT_TRAINING_DATES
 
 # --- メール設定 ---
 SMTP_EMAIL = os.getenv("SMTP_EMAIL", "")
@@ -146,7 +152,7 @@ def save_booking(session_data: dict) -> bool:
         conn.close()
 
 
-def resolve_training(training_type: str, data: dict | None = None):
+def resolve_training(training_type: str, data: Optional[dict] = None):
     """case_interview_new/mid → case_interview へのフォールバックを一元化"""
     if data is None:
         data = load_training_dates()
