@@ -369,6 +369,10 @@
         <label class="form-label">電話番号</label>
         <input type="tel" class="form-input" id="customerPhone" placeholder="090-1234-5678">
       </div>
+      <div class="form-group">
+        <label class="form-label">職業</label>
+        <input type="text" class="form-input" id="customerOccupation" placeholder="例: 大学生 / 会社員 / コンサルタント">
+      </div>
 
       <button type="button" id="submitBtn" class="btn-submit" disabled onclick="submitBooking()">
         日程を選択してください
@@ -644,6 +648,11 @@
     const notesParts = [picksSummary];
     if (currentType === 'practical_skills') {
       notesParts.unshift(`受講内容: ${selectedDayType}`);
+    }
+    // 職業情報があれば末尾に追加
+    const occupation = document.getElementById('customerOccupation').value.trim();
+    if (occupation) {
+      notesParts.push(`職業: ${occupation}`);
     }
     const bookingNotes = notesParts.join(' / ');
 
