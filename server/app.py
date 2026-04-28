@@ -33,6 +33,21 @@ stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 ADMIN_KEY = os.getenv("ADMIN_KEY", "symmetry-admin-2026")
 DB_PATH = os.getenv("DB_PATH", "bookings.db")
+
+# DBパスの親ディレクトリが書き込み不可ならローカル bookings.db にフォールバック
+# （Render Freeプランで永続ディスク /var/data が使えないケース等）
+_db_dir = os.path.dirname(DB_PATH)
+if _db_dir:
+    try:
+        os.makedirs(_db_dir, exist_ok=True)
+        _probe = os.path.join(_db_dir, ".write_probe")
+        with open(_probe, "w") as _f:
+            _f.write("")
+        os.remove(_probe)
+    except (PermissionError, OSError) as _e:
+        print(f"[起動] DB_PATH={DB_PATH} の親ディレクトリが書き込み不可（{_e}）→ ./bookings.db にフォールバック")
+        DB_PATH = "bookings.db"
+
 DEFAULT_TRAINING_DATES = Path(__file__).parent / "training_dates.json"
 TRAINING_DATES_PATH = Path(os.getenv("TRAINING_DATES_PATH", str(DEFAULT_TRAINING_DATES)))
 
