@@ -1,0 +1,28 @@
+{
+  "codes": [
+    {
+      "code": "FRIEND10",
+      "discount_type": "rate",
+      "discount_value": 0.10,
+      "max_uses": null,
+      "used_count": 0,
+      "expires": "2026-12-31",
+      "applies_to": [],
+      "issuer": "友達紹介テスト",
+      "note": "10%OFF",
+      "active": true
+    },
+    {
+      "code": "WELCOME1000",
+      "discount_type": "amount",
+      "discount_value": 1000,
+      "max_uses": null,
+      "used_count": 0,
+      "expires": "2026-12-31",
+      "applies_to": [],
+      "issuer": "新規お試し",
+      "note": "¥1,000割引",
+      "active": true
+    }
+  ]
+}

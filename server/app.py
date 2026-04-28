@@ -50,6 +50,8 @@ if _db_dir:
 
 DEFAULT_TRAINING_DATES = Path(__file__).parent / "training_dates.json"
 TRAINING_DATES_PATH = Path(os.getenv("TRAINING_DATES_PATH", str(DEFAULT_TRAINING_DATES)))
+DEFAULT_REFERRAL_CODES = Path(__file__).parent / "referral_codes.json"
+REFERRAL_CODES_PATH = Path(os.getenv("REFERRAL_CODES_PATH", str(DEFAULT_REFERRAL_CODES)))
 
 # 永続ディスク側にファイルが無ければ、初回起動時にリポジトリ同梱のデフォルトをコピー
 # （失敗しても起動は継続する — 書き込み不可な環境でも最低限デフォルトをロードして動作させる）
@@ -60,6 +62,14 @@ try:
 except Exception as _e:
     print(f"[起動] training_dates.json の永続化領域への初期化に失敗（デフォルトを使用）: {_e}")
     TRAINING_DATES_PATH = DEFAULT_TRAINING_DATES
+
+try:
+    if not REFERRAL_CODES_PATH.exists() and DEFAULT_REFERRAL_CODES.exists():
+        REFERRAL_CODES_PATH.parent.mkdir(parents=True, exist_ok=True)
+        REFERRAL_CODES_PATH.write_text(DEFAULT_REFERRAL_CODES.read_text(encoding="utf-8"), encoding="utf-8")
+except Exception as _e:
+    print(f"[起動] referral_codes.json の永続化領域への初期化に失敗（デフォルトを使用）: {_e}")
+    REFERRAL_CODES_PATH = DEFAULT_REFERRAL_CODES
 
 # --- メール設定 ---
 SMTP_EMAIL = os.getenv("SMTP_EMAIL", "")
@@ -89,6 +99,7 @@ class CheckoutRequest(BaseModel):
     customer_company: str = ""
     sessions: int = 1
     booking_notes: str = ""  # 第1〜第3希望など補足情報（Stripe metadataへ退避）
+    referral_code: str = ""
 
 
 # --- SQLite ---
@@ -193,6 +204,126 @@ def count_bookings_for_date(training_type: str, date: str) -> int:
 def load_training_dates():
     with open(TRAINING_DATES_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+# --- 紹介コード ---
+def load_referral_codes() -> dict:
+    """紹介コード一覧を読み込む（無ければ空構造）"""
+    try:
+        with open(REFERRAL_CODES_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {"codes": []}
+
+
+def save_referral_codes(data: dict):
+    """紹介コード一覧を保存"""
+    try:
+        REFERRAL_CODES_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(REFERRAL_CODES_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"[紹介コード] 保存失敗: {e}")
+
+
+def find_referral_code(code: str) -> Optional[dict]:
+    """大文字小文字無視でコードを検索（戻り値は元データへの参照）"""
+    if not code:
+        return None
+    code_norm = code.strip().upper()
+    data = load_referral_codes()
+    for entry in data.get("codes", []):
+        if entry.get("code", "").strip().upper() == code_norm:
+            return entry
+    return None
+
+
+def validate_referral_code(code: str, training_type: str = "") -> dict:
+    """
+    紹介コードを検証し、適用情報を返す。
+    戻り値: {"valid": bool, "reason": str, "discount_type": "rate"|"amount", "discount_value": ..., "label": "..."}
+    """
+    entry = find_referral_code(code)
+    if not entry:
+        return {"valid": False, "reason": "コードが見つかりません"}
+    if not entry.get("active", True):
+        return {"valid": False, "reason": "現在停止中のコードです"}
+
+    # 期限チェック
+    expires = entry.get("expires", "")
+    if expires:
+        try:
+            today = datetime.now().date()
+            exp_date = datetime.strptime(expires, "%Y-%m-%d").date()
+            if today > exp_date:
+                return {"valid": False, "reason": f"有効期限切れ（{expires}まで）"}
+        except ValueError:
+            pass
+
+    # 利用上限チェック
+    max_uses = entry.get("max_uses")
+    used_count = entry.get("used_count", 0)
+    if max_uses is not None and used_count >= max_uses:
+        return {"valid": False, "reason": "利用上限に達しています"}
+
+    # 対象研修種別チェック
+    applies_to = entry.get("applies_to", []) or []
+    if applies_to and training_type:
+        # case_interview_new/mid → case_interview の正規化を反映
+        normalized = "case_interview" if training_type in ("case_interview_new", "case_interview_mid") else training_type
+        if normalized not in applies_to and training_type not in applies_to:
+            return {"valid": False, "reason": "対象外の研修種別です"}
+
+    discount_type = entry.get("discount_type", "amount")
+    discount_value = entry.get("discount_value", 0)
+
+    if discount_type == "rate":
+        label = f"{int(discount_value * 100)}% OFF"
+    else:
+        label = f"¥{int(discount_value):,} 割引"
+
+    return {
+        "valid": True,
+        "reason": "適用可能",
+        "code": entry.get("code", ""),
+        "discount_type": discount_type,
+        "discount_value": discount_value,
+        "label": label,
+        "note": entry.get("note", ""),
+    }
+
+
+def calc_discounted_total(original_total: int, validation: dict) -> int:
+    """検証済みコード情報から割引後の合計金額を計算"""
+    if not validation.get("valid"):
+        return original_total
+    dtype = validation.get("discount_type")
+    dval = validation.get("discount_value", 0)
+    if dtype == "rate":
+        discounted = int(round(original_total * (1 - float(dval))))
+    elif dtype == "amount":
+        discounted = int(original_total - int(dval))
+    else:
+        discounted = original_total
+    # 0円以下は0円に丸める（Stripeは50円未満決済不可なので、最低50円に）
+    return max(50, discounted)
+
+
+def increment_referral_use(code: str):
+    """紹介コードの利用回数を+1"""
+    if not code:
+        return
+    code_norm = code.strip().upper()
+    data = load_referral_codes()
+    changed = False
+    for entry in data.get("codes", []):
+        if entry.get("code", "").strip().upper() == code_norm:
+            entry["used_count"] = entry.get("used_count", 0) + 1
+            changed = True
+            break
+    if changed:
+        save_referral_codes(data)
+        print(f"[紹介コード] 利用カウント+1: {code_norm}")
 
 
 # --- メール送信 ---
@@ -490,14 +621,29 @@ async def create_checkout_session(req: CheckoutRequest):
     # ケース面接対策はパッケージ価格（割引適用）。それ以外は単価×数量
     CASE_PACKAGE_PRICES = {1: 7000, 2: 13580, 3: 19950, 5: 32200, 10: 63000}
     if req.training_type in ("case_interview", "case_interview_new", "case_interview_mid") and qty in CASE_PACKAGE_PRICES:
-        total_price = CASE_PACKAGE_PRICES[qty]
-        # Stripeのline_itemsは「単価×数量」モデルなので、パッケージ全額を unit_amount に入れて quantity=1 で渡す
-        unit_amount = total_price
-        stripe_quantity = 1
+        original_total = CASE_PACKAGE_PRICES[qty]
     else:
-        total_price = training["price"] * qty
-        unit_amount = training["price"]
-        stripe_quantity = qty
+        original_total = training["price"] * qty
+
+    # 紹介コード検証＆割引適用
+    referral_validation = {"valid": False}
+    discount_amount = 0
+    if req.referral_code:
+        referral_validation = validate_referral_code(req.referral_code, req.training_type)
+        if referral_validation.get("valid"):
+            discounted_total = calc_discounted_total(original_total, referral_validation)
+            discount_amount = original_total - discounted_total
+            total_price = discounted_total
+        else:
+            # 無効コードは入力ミスの可能性がある。エラーで止めずログだけ残して通常価格で進める
+            print(f"[checkout] 紹介コード無効: {req.referral_code} → {referral_validation.get('reason')}")
+            total_price = original_total
+    else:
+        total_price = original_total
+
+    # Stripeのline_itemsは「単価×数量」モデルなので、合計額を unit_amount に入れて quantity=1 で渡す
+    unit_amount = total_price
+    stripe_quantity = 1
 
     # Stripe product name は250文字制限。日時部分だけを載せ、希望一覧は metadata へ
     name_with_qty = f"{training['name']} - {req.training_date}"
@@ -536,6 +682,9 @@ async def create_checkout_session(req: CheckoutRequest):
                 "customer_phone": req.customer_phone,
                 "customer_company": req.customer_company,
                 "price": str(total_price),
+                "original_price": str(original_total),
+                "discount_amount": str(discount_amount),
+                "referral_code": req.referral_code if referral_validation.get("valid") else "",
                 "sessions": str(qty),
                 "booking_notes": notes,
             }
@@ -578,11 +727,15 @@ async def confirm_booking(session_id: str):
         inserted = save_booking(session_data)
         print(f"[予約確認] session_id={session_id} inserted={inserted}")
 
-        # 新規予約のときのみ通知送信（confirm-booking多重呼び出し対策）
+        # 新規予約のときのみ通知送信＋紹介コード使用カウント（confirm-booking多重呼び出し対策）
         if inserted:
             amount = session_data.get("amount_total", 0)
             send_booking_confirmation(session_data["metadata"], amount)
             send_line_booking_notification(session_data["metadata"], amount)
+            # 紹介コード使用回数を+1
+            used_code = session_data["metadata"].get("referral_code", "")
+            if used_code:
+                increment_referral_use(used_code)
             return {"status": "ok", "message": "予約を記録しました"}
         else:
             return {"status": "ok", "message": "予約は既に記録済みです", "already_recorded": True}
@@ -699,6 +852,32 @@ async def get_stats(key: str = ""):
         "monthly_bookings": monthly,
         "monthly_revenue": monthly_revenue,
     }
+
+
+@app.get("/api/validate-referral")
+async def api_validate_referral(code: str = "", training_type: str = ""):
+    """紹介コードのリアルタイム検証エンドポイント"""
+    return validate_referral_code(code, training_type)
+
+
+@app.get("/api/admin/referral-codes")
+async def admin_get_referral_codes(key: str = ""):
+    """全紹介コード一覧（管理画面用）"""
+    if key != ADMIN_KEY:
+        raise HTTPException(status_code=403, detail="認証が必要です")
+    return load_referral_codes()
+
+
+@app.post("/api/admin/referral-codes")
+async def admin_save_referral_codes(request: Request, key: str = ""):
+    """紹介コード一覧を上書き保存（管理画面用）"""
+    if key != ADMIN_KEY:
+        raise HTTPException(status_code=403, detail="認証が必要です")
+    body = await request.json()
+    if "codes" not in body or not isinstance(body["codes"], list):
+        raise HTTPException(status_code=400, detail="codesリストが必要です")
+    save_referral_codes({"codes": body["codes"]})
+    return {"status": "ok", "count": len(body["codes"])}
 
 
 @app.get("/api/health")

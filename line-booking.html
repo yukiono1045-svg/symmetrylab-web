@@ -351,6 +351,10 @@
           <span style="color:var(--gray-500);">受講内容</span>
           <span style="font-weight:600;" id="summaryDay">Day1：基礎編</span>
         </div>
+        <div class="summary-row" id="summaryDiscountRow" style="display:none;">
+          <span style="color:var(--gray-500);">紹介コード割引</span>
+          <span style="font-weight:600;color:var(--tiffany-dark);" id="summaryDiscount">-¥0</span>
+        </div>
         <div class="summary-row total">
           <span style="color:var(--gray-500);">合計金額</span>
           <span class="summary-total-value" id="summaryTotal">¥7,000</span>
@@ -375,7 +379,8 @@
       </div>
       <div class="form-group">
         <label class="form-label">紹介コード</label>
-        <input type="text" class="form-input" id="referralCode" placeholder="お持ちの方のみご入力ください">
+        <input type="text" class="form-input" id="referralCode" placeholder="お持ちの方のみご入力ください" oninput="onReferralInput()">
+        <div id="referralStatus" style="font-size:11px;margin-top:6px;min-height:14px;"></div>
       </div>
 
       <button type="button" id="submitBtn" class="btn-submit" disabled onclick="submitBooking()">
@@ -409,6 +414,8 @@
   let picks = []; // [{date, time}] max 3
   let selectedDayType = 'Day1：基礎編'; // 実践スキル研修のみ。デフォルトDay1
   let currentYear, currentMonth;
+  let referralValidation = null; // {valid, discount_type, discount_value, label, ...}
+  let referralCheckTimer = null;
   let availableDates = [];
   const DAY_NAMES = ['日','月','火','水','木','金','土'];
   const PICK_LABELS = ['第1希望','第2希望','第3希望'];
@@ -483,6 +490,51 @@
     btn.classList.add('active');
     selectedDayType = btn.dataset.day;
     updateSummary();
+  }
+
+  function onReferralInput() {
+    const code = document.getElementById('referralCode').value.trim();
+    const status = document.getElementById('referralStatus');
+    if (!code) {
+      referralValidation = null;
+      status.textContent = '';
+      updateSummary();
+      return;
+    }
+    status.textContent = '確認中…';
+    status.style.color = 'var(--gray-500)';
+    if (referralCheckTimer) clearTimeout(referralCheckTimer);
+    referralCheckTimer = setTimeout(async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/validate-referral?code=${encodeURIComponent(code)}&training_type=${currentType}`);
+        const data = await r.json();
+        referralValidation = data;
+        if (data.valid) {
+          status.textContent = `✓ 紹介コード適用: ${data.label}`;
+          status.style.color = 'var(--tiffany-dark)';
+        } else {
+          status.textContent = `× ${data.reason || '無効なコードです'}`;
+          status.style.color = '#DC2626';
+        }
+      } catch (e) {
+        referralValidation = null;
+        status.textContent = '検証に失敗しました';
+        status.style.color = '#DC2626';
+      }
+      updateSummary();
+    }, 400);
+  }
+
+  function calcDiscount(originalTotal) {
+    if (!referralValidation || !referralValidation.valid) return 0;
+    const dtype = referralValidation.discount_type;
+    const dval = referralValidation.discount_value;
+    if (dtype === 'rate') {
+      return Math.round(originalTotal * dval);
+    } else if (dtype === 'amount') {
+      return Math.min(originalTotal - 50, parseInt(dval, 10));
+    }
+    return 0;
   }
 
   function renderCalendar() {
@@ -609,14 +661,24 @@
     const info = trainingInfo[currentType];
     document.getElementById('summaryName').textContent = info.name;
     const sessions = currentType === 'case_interview' ? parseInt(document.getElementById('sessions').value) : 1;
-    const total = currentType === 'case_interview'
+    const original = currentType === 'case_interview'
       ? (CASE_PACKAGE_PRICES[sessions] || info.price * sessions)
       : info.price * sessions;
+    const discount = calcDiscount(original);
+    const total = Math.max(50, original - discount);
     document.getElementById('summarySessions').textContent = `${sessions}セッション`;
     document.getElementById('summaryTotal').textContent = `¥${total.toLocaleString()}`;
     document.getElementById('summarySessionRow').style.display = currentType === 'case_interview' ? 'flex' : 'none';
     document.getElementById('summaryDayRow').style.display = currentType === 'practical_skills' ? 'flex' : 'none';
     document.getElementById('summaryDay').textContent = selectedDayType;
+    // 割引行
+    const discountRow = document.getElementById('summaryDiscountRow');
+    if (discount > 0) {
+      discountRow.style.display = 'flex';
+      document.getElementById('summaryDiscount').textContent = `-¥${discount.toLocaleString()}`;
+    } else {
+      discountRow.style.display = 'none';
+    }
     updateSubmitBtn();
   }
 
@@ -658,7 +720,7 @@
     if (occupation) {
       notesParts.push(`職業: ${occupation}`);
     }
-    // 紹介コードがあれば末尾に追加
+    // 紹介コードはbodyの専用フィールドで送信（notesにも明示）
     const referral = document.getElementById('referralCode').value.trim();
     if (referral) {
       notesParts.push(`紹介コード: ${referral}`);
@@ -677,7 +739,8 @@
           customer_phone: document.getElementById('customerPhone').value,
           customer_company: lineUserId ? `LINE:${lineUserId}` : '',
           sessions: sessions,
-          booking_notes: bookingNotes
+          booking_notes: bookingNotes,
+          referral_code: referral
         })
       });
       if (!r.ok) {
