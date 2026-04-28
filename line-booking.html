@@ -373,6 +373,10 @@
         <label class="form-label">職業</label>
         <input type="text" class="form-input" id="customerOccupation" placeholder="例: 大学生 / 会社員 / コンサルタント">
       </div>
+      <div class="form-group">
+        <label class="form-label">紹介コード</label>
+        <input type="text" class="form-input" id="referralCode" placeholder="お持ちの方のみご入力ください">
+      </div>
 
       <button type="button" id="submitBtn" class="btn-submit" disabled onclick="submitBooking()">
         日程を選択してください
@@ -653,6 +657,11 @@
     const occupation = document.getElementById('customerOccupation').value.trim();
     if (occupation) {
       notesParts.push(`職業: ${occupation}`);
+    }
+    // 紹介コードがあれば末尾に追加
+    const referral = document.getElementById('referralCode').value.trim();
+    if (referral) {
+      notesParts.push(`紹介コード: ${referral}`);
     }
     const bookingNotes = notesParts.join(' / ');
 
