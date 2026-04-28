@@ -370,12 +370,12 @@
         <input type="email" class="form-input" id="customerEmail" placeholder="example@email.com" required>
       </div>
       <div class="form-group">
-        <label class="form-label">電話番号</label>
-        <input type="tel" class="form-input" id="customerPhone" placeholder="090-1234-5678">
+        <label class="form-label">電話番号<span class="required">必須</span></label>
+        <input type="tel" class="form-input" id="customerPhone" placeholder="090-1234-5678" required>
       </div>
       <div class="form-group">
-        <label class="form-label">職業</label>
-        <input type="text" class="form-input" id="customerOccupation" placeholder="例: 大学生 / 会社員 / コンサルタント">
+        <label class="form-label">職業<span class="required">必須</span></label>
+        <input type="text" class="form-input" id="customerOccupation" placeholder="例: 大学生 / 会社員 / コンサルタント" required>
       </div>
       <div class="form-group">
         <label class="form-label">紹介コード</label>
@@ -697,7 +697,11 @@
     if (picks.length === 0) return;
     const name = document.getElementById('customerName').value.trim();
     const email = document.getElementById('customerEmail').value.trim();
+    const phone = document.getElementById('customerPhone').value.trim();
+    const occupation = document.getElementById('customerOccupation').value.trim();
     if (!name || !email) { alert('お名前とメールアドレスは必須です。'); return; }
+    if (!phone) { alert('電話番号は必須です。'); document.getElementById('customerPhone').focus(); return; }
+    if (!occupation) { alert('職業は必須です。'); document.getElementById('customerOccupation').focus(); return; }
 
     const btn = document.getElementById('submitBtn');
     btn.disabled = true;
@@ -715,11 +719,8 @@
     if (currentType === 'practical_skills') {
       notesParts.unshift(`受講内容: ${selectedDayType}`);
     }
-    // 職業情報があれば末尾に追加
-    const occupation = document.getElementById('customerOccupation').value.trim();
-    if (occupation) {
-      notesParts.push(`職業: ${occupation}`);
-    }
+    // 職業情報を末尾に追加（必須化済み）
+    notesParts.push(`職業: ${occupation}`);
     // 紹介コードはbodyの専用フィールドで送信（notesにも明示）
     const referral = document.getElementById('referralCode').value.trim();
     if (referral) {
@@ -736,7 +737,7 @@
           training_date: trainingDate,
           customer_name: name,
           customer_email: email,
-          customer_phone: document.getElementById('customerPhone').value,
+          customer_phone: phone,
           customer_company: lineUserId ? `LINE:${lineUserId}` : '',
           sessions: sessions,
           booking_notes: bookingNotes,
