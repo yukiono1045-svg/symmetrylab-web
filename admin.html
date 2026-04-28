@@ -218,6 +218,7 @@
     <button class="tab active" onclick="switchTab('dashboard')">ダッシュボード</button>
     <button class="tab" onclick="switchTab('bookings')">予約一覧</button>
     <button class="tab" onclick="switchTab('blocked')">予約対応可能日設定</button>
+    <button class="tab" onclick="switchTab('referrals')">紹介コード管理</button>
   </div>
 
   <!-- ダッシュボード -->
@@ -313,6 +314,37 @@
       <span class="save-msg" id="save-msg">保存しました</span>
     </div>
   </div>
+
+  <!-- 紹介コード管理 -->
+  <div class="tab-content" id="tab-referrals">
+    <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+      <button class="btn-save-block" onclick="addReferralCode()">+ 新規追加</button>
+      <button class="btn-save-block" style="background:var(--success);" onclick="saveReferralCodes()">サーバへ保存</button>
+      <button class="btn-save-block" style="background:var(--text-light);" onclick="downloadReferralJson()">JSONダウンロード</button>
+      <span class="save-msg" id="referral-save-msg">保存しました</span>
+    </div>
+    <div style="background:#fff8d6;border:1px solid #f0c000;border-radius:6px;padding:0.75rem 1rem;font-size:0.82rem;color:#7a5c00;margin-bottom:1rem;">
+      <strong>注意:</strong> Renderの永続ディスクが無い環境では、デプロイ毎にここでの保存内容がリセットされます。永続化したい場合は<strong>「JSONダウンロード」</strong>でファイルを取得し、<code>server/referral_codes.json</code> を上書きしてgit pushしてください。
+    </div>
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th style="min-width:120px;">コード</th>
+            <th>種別</th>
+            <th>値</th>
+            <th>利用 / 上限</th>
+            <th>有効期限</th>
+            <th>対象</th>
+            <th>発行者</th>
+            <th>有効</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="referral-tbody"></tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -382,6 +414,7 @@
       blockMonth = now.getMonth();
       loadBlockedDates();
     }
+    if (name === 'referrals') loadReferralCodes();
   }
 
   // --- ダッシュボード ---
@@ -630,6 +663,144 @@
     } catch (err) {
       alert('保存に失敗しました');
     }
+  }
+
+  // --- 紹介コード管理 ---
+  let referralCodes = [];
+
+  async function loadReferralCodes() {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/referral-codes?key=${encodeURIComponent(adminKey)}`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      referralCodes = data.codes || [];
+      renderReferralCodes();
+    } catch (err) {
+      alert('紹介コードの取得に失敗しました');
+    }
+  }
+
+  function renderReferralCodes() {
+    const tbody = document.getElementById('referral-tbody');
+    tbody.innerHTML = '';
+    if (referralCodes.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="no-data">紹介コードが登録されていません。「+ 新規追加」で作成してください。</td></tr>';
+      return;
+    }
+    referralCodes.forEach((entry, idx) => {
+      const tr = document.createElement('tr');
+      const dtype = entry.discount_type === 'rate' ? '率' : '額';
+      const dval = entry.discount_type === 'rate'
+        ? `${(entry.discount_value * 100).toFixed(0)}%`
+        : `¥${Number(entry.discount_value).toLocaleString()}`;
+      const usage = `${entry.used_count || 0} / ${entry.max_uses != null ? entry.max_uses : '∞'}`;
+      const applies = (entry.applies_to && entry.applies_to.length > 0) ? entry.applies_to.join(',') : '全研修';
+      const activeBadge = entry.active
+        ? '<span style="color:var(--success);font-weight:700;">🟢 有効</span>'
+        : '<span style="color:var(--text-light);">⚪ 停止</span>';
+      tr.innerHTML = `
+        <td><input type="text" value="${escapeHtml(entry.code || '')}" data-idx="${idx}" data-field="code" style="width:110px;font-family:monospace;font-weight:700;"></td>
+        <td>
+          <select data-idx="${idx}" data-field="discount_type">
+            <option value="rate" ${entry.discount_type === 'rate' ? 'selected' : ''}>率</option>
+            <option value="amount" ${entry.discount_type === 'amount' ? 'selected' : ''}>額</option>
+          </select>
+        </td>
+        <td><input type="number" step="0.01" value="${entry.discount_value || 0}" data-idx="${idx}" data-field="discount_value" style="width:80px;"></td>
+        <td style="white-space:nowrap;">${entry.used_count || 0} / <input type="number" value="${entry.max_uses == null ? '' : entry.max_uses}" placeholder="∞" data-idx="${idx}" data-field="max_uses" style="width:60px;"></td>
+        <td><input type="date" value="${escapeHtml(entry.expires || '')}" data-idx="${idx}" data-field="expires"></td>
+        <td>
+          <select data-idx="${idx}" data-field="applies_to">
+            <option value="all" ${(!entry.applies_to || entry.applies_to.length === 0) ? 'selected' : ''}>全研修</option>
+            <option value="case_interview" ${entry.applies_to && entry.applies_to.includes('case_interview') ? 'selected' : ''}>ケース面接</option>
+            <option value="practical_skills" ${entry.applies_to && entry.applies_to.includes('practical_skills') ? 'selected' : ''}>実践スキル</option>
+          </select>
+        </td>
+        <td><input type="text" value="${escapeHtml(entry.issuer || '')}" data-idx="${idx}" data-field="issuer" style="width:100px;"></td>
+        <td><input type="checkbox" data-idx="${idx}" data-field="active" ${entry.active ? 'checked' : ''}></td>
+        <td><button class="btn-export" style="background:var(--danger);" onclick="deleteReferralCode(${idx})">削除</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // 入力イベント登録
+    tbody.querySelectorAll('input,select').forEach(el => {
+      el.addEventListener('change', onReferralFieldChange);
+    });
+  }
+
+  function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function onReferralFieldChange(e) {
+    const idx = parseInt(e.target.dataset.idx, 10);
+    const field = e.target.dataset.field;
+    const entry = referralCodes[idx];
+    if (!entry) return;
+
+    if (field === 'active') {
+      entry.active = e.target.checked;
+    } else if (field === 'max_uses') {
+      const v = e.target.value.trim();
+      entry.max_uses = v === '' ? null : parseInt(v, 10);
+    } else if (field === 'discount_value') {
+      entry.discount_value = parseFloat(e.target.value) || 0;
+    } else if (field === 'applies_to') {
+      entry.applies_to = e.target.value === 'all' ? [] : [e.target.value];
+    } else {
+      entry[field] = e.target.value;
+    }
+  }
+
+  function addReferralCode() {
+    referralCodes.push({
+      code: 'NEWCODE' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+      discount_type: 'rate',
+      discount_value: 0.10,
+      max_uses: null,
+      used_count: 0,
+      expires: '2026-12-31',
+      applies_to: [],
+      issuer: '',
+      note: '',
+      active: true
+    });
+    renderReferralCodes();
+  }
+
+  function deleteReferralCode(idx) {
+    if (!confirm(`コード「${referralCodes[idx].code}」を削除しますか？`)) return;
+    referralCodes.splice(idx, 1);
+    renderReferralCodes();
+  }
+
+  async function saveReferralCodes() {
+    try {
+      const res = await fetch(`${API_BASE}/api/admin/referral-codes?key=${encodeURIComponent(adminKey)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codes: referralCodes })
+      });
+      if (!res.ok) throw new Error();
+      const msg = document.getElementById('referral-save-msg');
+      msg.classList.add('show');
+      setTimeout(() => msg.classList.remove('show'), 2000);
+    } catch (err) {
+      alert('保存に失敗しました');
+    }
+  }
+
+  function downloadReferralJson() {
+    const json = JSON.stringify({ codes: referralCodes }, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'referral_codes.json';
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   // --- ユーティリティ ---
