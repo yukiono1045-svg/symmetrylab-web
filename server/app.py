@@ -486,12 +486,23 @@ async def create_checkout_session(req: CheckoutRequest):
         raise HTTPException(status_code=400, detail="この日程は定員に達しています")
 
     qty = max(1, int(req.sessions))
-    total_price = training["price"] * qty
+
+    # ケース面接対策はパッケージ価格（割引適用）。それ以外は単価×数量
+    CASE_PACKAGE_PRICES = {1: 7000, 2: 13580, 3: 19950, 5: 32200, 10: 63000}
+    if req.training_type in ("case_interview", "case_interview_new", "case_interview_mid") and qty in CASE_PACKAGE_PRICES:
+        total_price = CASE_PACKAGE_PRICES[qty]
+        # Stripeのline_itemsは「単価×数量」モデルなので、パッケージ全額を unit_amount に入れて quantity=1 で渡す
+        unit_amount = total_price
+        stripe_quantity = 1
+    else:
+        total_price = training["price"] * qty
+        unit_amount = training["price"]
+        stripe_quantity = qty
 
     # Stripe product name は250文字制限。日時部分だけを載せ、希望一覧は metadata へ
     name_with_qty = f"{training['name']} - {req.training_date}"
     if qty > 1:
-        name_with_qty += f"（{qty}セッション）"
+        name_with_qty += f"（{qty}セッションパッケージ）"
     if len(name_with_qty) > 240:
         name_with_qty = name_with_qty[:237] + "..."
 
@@ -508,9 +519,9 @@ async def create_checkout_session(req: CheckoutRequest):
                         "name": name_with_qty,
                         "description": f"SYMMETRY Lab {training['name']}"
                     },
-                    "unit_amount": training["price"],
+                    "unit_amount": unit_amount,
                 },
-                "quantity": qty,
+                "quantity": stripe_quantity,
             }],
             mode="payment",
             success_url=f"{BASE_URL}/booking.html?success=true&session_id={{CHECKOUT_SESSION_ID}}",

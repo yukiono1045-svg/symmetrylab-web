@@ -295,10 +295,10 @@
       <label class="section-label">ご希望セッション数<span class="required">必須</span></label>
       <select class="form-select" id="sessions" onchange="updateSummary()">
         <option value="1">1セッション（¥7,000）</option>
-        <option value="2">2セッション（¥14,000）</option>
-        <option value="3">3セッション（¥21,000）</option>
-        <option value="5">5セッション（¥35,000）</option>
-        <option value="10">10セッション（¥70,000）</option>
+        <option value="2">2セッション（¥13,580）</option>
+        <option value="3">3セッション（¥19,950）</option>
+        <option value="5">5セッション（¥32,200）</option>
+        <option value="10">10セッション（¥63,000）</option>
       </select>
     </div>
 
@@ -351,6 +351,14 @@
   let trainingInfo = {
     case_interview: { price: 7000, name: 'ケース面接対策' },
     practical_skills: { price: 15000, name: '実践スキル研修' }
+  };
+  // ケース面接対策のセッション数別パッケージ価格（割引適用）
+  const CASE_PACKAGE_PRICES = {
+    1: 7000,
+    2: 13580,
+    3: 19950,
+    5: 32200,
+    10: 63000
   };
   let selectedDate = null;
   let picks = []; // [{date, time}] max 3
@@ -547,7 +555,9 @@
     const info = trainingInfo[currentType];
     document.getElementById('summaryName').textContent = info.name;
     const sessions = currentType === 'case_interview' ? parseInt(document.getElementById('sessions').value) : 1;
-    const total = info.price * sessions;
+    const total = currentType === 'case_interview'
+      ? (CASE_PACKAGE_PRICES[sessions] || info.price * sessions)
+      : info.price * sessions;
     document.getElementById('summarySessions').textContent = `${sessions}セッション`;
     document.getElementById('summaryTotal').textContent = `¥${total.toLocaleString()}`;
     document.getElementById('summarySessionRow').style.display = currentType === 'case_interview' ? 'flex' : 'none';
