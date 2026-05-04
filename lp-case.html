@@ -37,12 +37,12 @@
         <div class="nav-dropdown">
           <a href="services.html" class="nav-dropdown-trigger">サービス</a>
           <div class="nav-dropdown-menu">
-            <a href="services.html">研修サービス</a>
+            <a href="services.html">ジョブ対策</a>
             <a href="lp-case.html">ケース面接対策</a>
-            <a href="faq.html">FAQ</a>
+            <a href="faq.html">よくある質問</a>
           </div>
         </div>
-        <a href="blog/index.html">ニュース・コラム</a>
+        <a href="blog/index.html">ニュース</a>
         <a href="contact.html">お問い合わせ</a>
       </div>
     </div>
@@ -51,48 +51,51 @@
   <!-- ヒーローセクション（2カラム） -->
   <section class="lp-hero">
     <div class="lp-hero-inner">
+      <div class="lp-hero-badge-wrap">
+        <p class="lp-hero-badge-text">━ For Aspiring Strategy Consultants ━</p>
+        <h2 class="lp-hero-section-title">ケース面接対策</h2>
+      </div>
       <div class="lp-hero-copy">
-        <span class="lp-hero-badge">For Aspiring Strategy Consultants</span>
         <h1>
-          戦略コンサルを本気で目指す学生へ。<br>
-          独学の壁を、<span class="accent">1対1指導</span>で突破する。
+          戦略コンサルを本気で目指すあなたへ。<br>
+          独学の壁を、<span class="accent">ワンツーマン指導</span>で突破させます。
         </h1>
         <p class="lp-hero-sub">
-          「市販の本は一通り読んだ。でも、実際のケースになると手が止まる」——<br>
-          そんなあなたのために、外資系戦略コンサル出身者が、あなた専用のカリキュラムで直接指導します。
+          "市販の本は一通り読んだ。でも、実際のケースになると手が止まる…"<br>
+          そんなあなたのために、外資系戦略コンサル出身者が、<br>あなた専用のカリキュラムで直接指導します。
         </p>
         <div class="lp-hero-features">
           <div class="lp-hero-feature">外資系戦略コンサル出身講師</div>
           <div class="lp-hero-feature">実案件ベースのケース演習</div>
-          <div class="lp-hero-feature">完全マンツーマン・1対1</div>
+          <div class="lp-hero-feature">完全マンツーマン（1対1）指導</div>
         </div>
         <div class="lp-hero-proofs">
           <div class="lp-hero-proof">
             <div class="lp-hero-proof-num">100<span>%</span></div>
             <div class="lp-hero-proof-label">
-              <strong>受講生のリピート率</strong>
-              <span>※初回受講者の継続実績</span>
+              <strong>受講者様のリピート率は100%を維持しています</strong>
+              <span>※初回受講者様の継続実績</span>
             </div>
           </div>
           <div class="lp-hero-proof">
             <div class="lp-hero-proof-num">FREE</div>
             <div class="lp-hero-proof-label">
-              <strong>ケース対策資料プレゼント</strong>
-              <span>※お申込み者全員に進呈</span>
+              <strong>ケース面接対策資料を無料でプレゼントします</strong>
+              <span>※受講者様全員に進呈</span>
             </div>
           </div>
           <div class="lp-hero-proof">
             <div class="lp-hero-proof-num">24<span>h</span></div>
             <div class="lp-hero-proof-label">
-              <strong>お申込み後すぐにご連絡</strong>
-              <span>※当日予約にも対応可</span>
+              <strong>お申込み後、速やかにご連絡します</strong>
+              <span>※当日予約にも対応可能</span>
             </div>
           </div>
           <div class="lp-hero-proof">
             <div class="lp-hero-proof-num">GIFT</div>
             <div class="lp-hero-proof-label">
-              <strong>紹介特典・1回無料</strong>
-              <span>※ご紹介でケース面接対策1回プレゼント</span>
+              <strong>友達紹介でケース面接対策講座を1セッション無料でプレゼントします</strong>
+              <span></span>
             </div>
           </div>
         </div>
@@ -101,8 +104,8 @@
       <div class="lp-hero-form" id="hero-form">
         <div class="lp-hero-form-card">
           <div class="lp-hero-form-header">
-            <span class="lp-hero-form-badge">APPLY NOW</span>
-            <h2>ケース面接対策を<br>申し込む</h2>
+            <span class="lp-hero-form-badge">Apply Now</span>
+            <h2 style="white-space:nowrap;">ケース面接対策を申し込む</h2>
             <p class="lp-hero-form-price">¥7,000 <span>／ 60分・1セッション</span></p>
           </div>
 
@@ -118,21 +121,40 @@
             </div>
 
             <div class="lp-form-group">
-              <label class="lp-form-label">電話番号</label>
-              <input type="tel" class="lp-form-input lp-form-input--boxed" name="phone" placeholder="090-1234-5678">
+              <label class="lp-form-label">電話番号 <span class="required">必須</span></label>
+              <input type="tel" class="lp-form-input lp-form-input--boxed" name="phone" required placeholder="090-1234-5678">
+            </div>
+
+            <div class="lp-form-group">
+              <label class="lp-form-label">ご職業・ご身分 <span class="required">必須</span></label>
+              <select class="lp-form-select lp-form-input--boxed" name="status" required>
+                <option value="">選択してください</option>
+                <option value="法人">法人</option>
+                <option value="主婦">主婦</option>
+                <option value="社会人">社会人</option>
+                <option value="大学院生">大学院生</option>
+                <option value="大学生">大学生</option>
+                <option value="高校生">高校生</option>
+                <option value="その他">その他</option>
+              </select>
             </div>
 
             <div class="lp-form-group">
               <label class="lp-form-label">ご希望セッション数 <span class="required">必須</span></label>
               <select class="lp-form-select lp-form-input--boxed" name="sessions" required>
                 <option value="">選択してください</option>
-                <option value="1">まずは1セッション（¥7,000）</option>
+                <option value="1">1セッション（¥7,000）</option>
                 <option value="2">2セッション（¥13,580）</option>
                 <option value="3">3セッション（¥19,950）</option>
                 <option value="5">5セッション（¥32,200）</option>
                 <option value="10">10セッション（¥63,000）</option>
                 <option value="未定">未定・相談しながら決めたい</option>
               </select>
+            </div>
+
+            <div class="lp-form-group">
+              <label class="lp-form-label">クーポンコード <span style="color:var(--lp-gray-500);font-size:11px;font-weight:400;">（友達紹介で1回無料）</span></label>
+              <input type="text" class="lp-form-input lp-form-input--boxed" name="coupon" placeholder="例：FRIEND-XXXX">
             </div>
 
             <button type="submit" class="lp-form-submit lp-form-submit--hero">ケース面接対策を申し込む →</button>
@@ -147,12 +169,13 @@
   <section class="lp-problems">
     <div class="lp-container">
       <div class="lp-problems-list">
-        <h2>戦略コンサルを本気で目指すあなた、<br><span class="lp-mark">こんな壁</span>にぶつかっていませんか？</h2>
-        <div class="lp-problem-item">『戦略コンサルティングファームのケース問題集』は一通り解いたが、本番になると同じように解けない</div>
-        <div class="lp-problem-item">フレームワーク（3C / 4P / PEST…）は覚えたのに、面接官から「なぜそれを選んだ？」と問われると答えに詰まる</div>
-        <div class="lp-problem-item">大学の就活サークルや OB/OG 訪問で練習しても、表層的なフィードバックしか得られない</div>
-        <div class="lp-problem-item">独学で進めているが、自分が合格ラインのどこにいるか分からず、焦りだけが募る</div>
-        <div class="lp-problem-item">選考開始まで時間が限られている。無駄なく、最短ルートで実力を引き上げたい</div>
+        <p style="color:var(--lp-tiffany);font-weight:600;letter-spacing:0.1em;text-align:center;margin-bottom:1rem;">━ Are You Struggling With Any Of These ━</p>
+        <h2 style="font-size:1.25rem;line-height:1.7;font-weight:700;color:var(--lp-gray-900);white-space:nowrap;">戦略コンサルを本気で目指すあなたは、こんな壁にぶつかっていませんか？</h2>
+        <div class="lp-problem-item">『戦略コンサルティングファームのケース問題集』は一通り解いたが、本番になると同じように解けない…</div>
+        <div class="lp-problem-item">フレームワーク（3C / 4P / PEST…）は覚えたのに、面接官から「なぜそれを選んだ？」と問われると答えに詰まる…</div>
+        <div class="lp-problem-item">大学の就活サークルや OB/OG 訪問で練習しても、表層的なフィードバックしか得られない…</div>
+        <div class="lp-problem-item">独学で進めているが、自分が合格ラインのどこにいるか分からず、焦りだけが募る…</div>
+        <div class="lp-problem-item">選考開始までの時間が限られているため、無駄なく、最短ルートで実力を引き上げたい…</div>
       </div>
     </div>
   </section>
@@ -161,15 +184,15 @@
   <section class="lp-section">
     <div class="lp-container">
       <div class="lp-section-title">
-        <h2><span class="accent">SYMMETRY Lab</span> が選ばれる理由</h2>
-        <p class="lp-section-sub">WHY SYMMETRY LAB</p>
+        <p class="lp-section-sub" style="color:var(--lp-tiffany);font-weight:600;letter-spacing:0.1em;margin-bottom:0.5rem;">━ Why SYMMETRY Lab ━</p>
+        <h2>SYMMETRY Lab が選ばれる理由</h2>
       </div>
 
       <div class="lp-solution-card">
         <div class="lp-solution-num">01</div>
         <div class="lp-solution-content">
           <h3>外資系戦略コンサル出身者による直接指導</h3>
-          <p>講師は外資系戦略コンサルティングファーム出身。実際のM&A・ビジネスデューデリジェンス（BDD）・経営戦略プロジェクトで培った「現場の思考法」を、書籍では決して学べないレベルで伝授します。面接官が何を評価しているのかを、評価する側の視点から明らかにします。</p>
+          <p>講師は外資系戦略コンサルティングファーム出身のものが担当します。実際のM&Aや新規事業立案等の経営戦略プロジェクトで培った"現場の思考法"を、書籍では決して学べないレベルで伝授します。また、面接官が何を評価しているのかを、評価する側の視点から明らかにします。</p>
         </div>
       </div>
 
@@ -177,15 +200,15 @@
         <div class="lp-solution-num">02</div>
         <div class="lp-solution-content">
           <h3>実案件ベースの実戦型カリキュラム</h3>
-          <p>汎用的なフレームワーク暗記ではなく、実際のプロジェクトをベースにしたオリジナルケースで思考プロセスそのものを鍛えます。論点設計 → 構造化 → 仮説構築 → 検証の一連の流れを、受講者一人ひとりの弱点に合わせてカスタマイズ指導します。</p>
+          <p>汎用的なフレームワーク暗記ではなく、実際のプロジェクトをベースにしたオリジナルケースで思考プロセスそのものを鍛えます。論点設計→構造化→仮説構築→検証の一連の流れを、受講者様一人ひとりの弱点に合わせてカスタマイズ指導します。</p>
         </div>
       </div>
 
       <div class="lp-solution-card">
         <div class="lp-solution-num">03</div>
         <div class="lp-solution-content">
-          <h3>必要な分だけ、柔軟に受講できる</h3>
-          <p>他社の高額パッケージ（数十万円〜）とは異なり、1時間単位の完全従量制。現在のレベル・志望ファーム・残り時間に応じて、最短1セッションから受講可能です。「まず1回試してから継続を決める」という進め方にも柔軟に対応します。</p>
+          <h3>一人ひとりに合わせた柔軟な受講回数</h3>
+          <p>他社の高額パッケージ（数十万円〜）とは異なり、現在のレベル・志望ファーム・残り準備期間に応じて、最短1セッションからの受講が可能です。"まず1回試してから継続を決める"という進め方にも柔軟に対応します。</p>
         </div>
       </div>
     </div>
@@ -195,29 +218,37 @@
   <section class="lp-section">
     <div class="lp-container">
       <div class="lp-section-title">
-        <h2>受講までの<span class="accent">流れ</span></h2>
-        <p class="lp-section-sub">PROCESS — 最短3日で初回セッション開始</p>
+        <p class="lp-section-sub" style="color:var(--lp-tiffany);font-weight:600;letter-spacing:0.1em;margin-bottom:0.5rem;">━ Process ━</p>
+        <h2>受講までの流れ</h2>
       </div>
 
       <div class="lp-flow">
         <div class="lp-flow-item">
-          <span class="lp-flow-num">STEP / 01</span>
-          <h4>お申込みフォーム送信</h4>
+          <div class="lp-flow-header">
+            <span class="lp-flow-num">Step 01</span>
+            <h4>お申込みフォームの送信</h4>
+          </div>
           <p>ページ上部のフォームよりお名前・ご希望セッション数をお送りください。</p>
         </div>
         <div class="lp-flow-item">
-          <span class="lp-flow-num">STEP / 02</span>
-          <h4>担当者からのご連絡</h4>
+          <div class="lp-flow-header">
+            <span class="lp-flow-num">Step 02</span>
+            <h4>担当者からのご連絡</h4>
+          </div>
           <p>24時間以内に担当者よりご連絡し、日程調整とカリキュラムをご提案します。</p>
         </div>
         <div class="lp-flow-item">
-          <span class="lp-flow-num">STEP / 03</span>
-          <h4>お支払い</h4>
-          <p>Stripe経由のクレジットカード決済（VISA／Master／JCB／AMEX）で安全にお手続き。</p>
+          <div class="lp-flow-header">
+            <span class="lp-flow-num">Step 03</span>
+            <h4>お支払い</h4>
+          </div>
+          <p>Stripe経由のクレジットカード決済（VISA／Master／JCB／AMEX）で、対象講座の受講料をお支払いください。</p>
         </div>
         <div class="lp-flow-item">
-          <span class="lp-flow-num">STEP / 04</span>
-          <h4>マンツーマン指導開始</h4>
+          <div class="lp-flow-header">
+            <span class="lp-flow-num">Step 04</span>
+            <h4>マンツーマン指導開始</h4>
+          </div>
           <p>あなたの現在地から志望ファーム合格までの最短ルートで、1対1の指導を開始します。</p>
         </div>
       </div>
@@ -232,7 +263,7 @@
         <div>
           <h4>サービス</h4>
           <div class="footer-links">
-            <a href="services.html">研修サービス</a>
+            <a href="services.html">ジョブ対策</a>
             <a href="lp-case.html">ケース面接対策</a>
             <a href="booking.html">お申し込み</a>
           </div>
@@ -241,7 +272,7 @@
           <h4>会社情報</h4>
           <div class="footer-links">
             <a href="company.html">会社概要</a>
-            <a href="blog/index.html">ニュース・コラム</a>
+            <a href="blog/index.html">ニュース</a>
           </div>
         </div>
         <div>
@@ -584,7 +615,7 @@
       if(picks.length===0){
         list.innerHTML='<p style="font-size:12px;color:var(--lp-gray-500);text-align:center;padding:12px;border:1px dashed var(--lp-gray-300);border-radius:4px;">カレンダーから日程と時間を選択してください（第1〜第3希望）</p>';
       } else {
-        const colors=['var(--lp-tiffany)','#058A85','#7FD8D4'];
+        const colors=['var(--lp-tiffany)','#1FA8C4','#B2C4CD'];
         const textColors=['#fff','#fff','#1F2937'];
         list.innerHTML=picks.map((p,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:6px;background:${colors[i]};color:${textColors[i]};border-radius:6px;font-size:13px;">
           <span style="font-weight:700;min-width:60px;">${PICK_LABELS[i]}</span>

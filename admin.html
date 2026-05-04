@@ -149,13 +149,13 @@
     }
     .block-cal-cell.active { color: var(--text); cursor: pointer; }
     .block-cal-cell.active:hover { background: #f0f0f0; }
-    .block-cal-cell.blocked { background: #0ABAB5; color: #fff; font-weight: 700; }
-    .block-cal-cell.blocked:hover { background: #058A85; }
+    .block-cal-cell.blocked { background: #36C9E6; color: #fff; font-weight: 700; }
+    .block-cal-cell.blocked:hover { background: #1FA8C4; }
     .block-cal-cell.editing { outline: 3px solid #F59E0B; }
     .ts-btn { padding:10px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;text-align:center;font-size:14px;font-weight:600;font-family:inherit;transition:all 0.2s; }
-    .ts-btn:hover { border-color:#0ABAB5;background:#f0fafe; }
-    .ts-btn.active { background:#0ABAB5;color:#fff;border-color:#0ABAB5; }
-    .ts-btn.active:hover { background:#058A85; }
+    .ts-btn:hover { border-color:#36C9E6;background:#f0fafe; }
+    .ts-btn.active { background:#36C9E6;color:#fff;border-color:#36C9E6; }
+    .ts-btn.active:hover { background:#1FA8C4; }
     .block-type-select { margin-bottom: 1rem; }
     .block-type-select select {
       padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 6px;
@@ -173,7 +173,7 @@
       content: ''; display: inline-block; width: 12px; height: 12px;
       border-radius: 3px; margin-right: 4px; vertical-align: middle;
     }
-    .block-legend .leg-blocked::before { background: #0ABAB5; }
+    .block-legend .leg-blocked::before { background: #36C9E6; }
     .block-legend .leg-available::before { background: #e8e8e8; }
     .save-msg { display: inline-block; margin-left: 1rem; color: var(--success); font-size: 0.9rem; opacity: 0; transition: opacity 0.3s; }
     .save-msg.show { opacity: 1; }
@@ -303,7 +303,7 @@
         </div>
       </div>
 
-      <div id="time-slot-editor" style="display:none;margin:1rem 0;padding:1rem;background:#f0fafe;border:1px solid #0ABAB5;border-radius:8px;">
+      <div id="time-slot-editor" style="display:none;margin:1rem 0;padding:1rem;background:#f0fafe;border:1px solid #36C9E6;border-radius:8px;">
         <h4 id="time-slot-date-label" style="margin-bottom:0.75rem;color:#1a2332;"></h4>
         <p style="font-size:0.8rem;color:var(--text-light);margin-bottom:0.75rem;">対応可能な時間をクリックして選択してください</p>
         <div id="time-slot-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px;"></div>
@@ -615,7 +615,7 @@
     const selectAll = document.createElement('button');
     selectAll.type = 'button';
     selectAll.textContent = '全選択';
-    selectAll.style.cssText = 'padding:6px 16px;border:1px solid #0ABAB5;background:#fff;color:#0ABAB5;border-radius:4px;cursor:pointer;font-size:12px;font-family:inherit;';
+    selectAll.style.cssText = 'padding:6px 16px;border:1px solid #36C9E6;background:#fff;color:#36C9E6;border-radius:4px;cursor:pointer;font-size:12px;font-family:inherit;';
     selectAll.addEventListener('click', () => {
       if (!availableSlotsMap[type]) availableSlotsMap[type] = {};
       availableSlotsMap[type][dateStr] = [...allTimes];

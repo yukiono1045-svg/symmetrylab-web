@@ -19,8 +19,8 @@ FONT_PATH = r"C:/Windows/Fonts/NotoSansJP-VF.ttf"
 pdfmetrics.registerFont(TTFont("NotoJP", FONT_PATH))
 
 # カラー
-TIFFANY = HexColor("#0ABAB5")
-TIFFANY_DARK = HexColor("#058A85")
+TIFFANY = HexColor("#36C9E6")
+TIFFANY_DARK = HexColor("#1FA8C4")
 GRAY_900 = HexColor("#1F2937")
 GRAY_700 = HexColor("#4B5563")
 GRAY_500 = HexColor("#6B7280")

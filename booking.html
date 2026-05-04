@@ -248,12 +248,12 @@
         <div class="nav-dropdown">
           <a href="services.html" class="nav-dropdown-trigger">サービス</a>
           <div class="nav-dropdown-menu">
-            <a href="services.html">研修サービス</a>
+            <a href="services.html">ジョブ対策</a>
             <a href="lp-case.html">ケース面接対策</a>
-            <a href="faq.html">FAQ</a>
+            <a href="faq.html">よくある質問</a>
           </div>
         </div>
-        <a href="blog/index.html">ニュース・コラム</a>
+        <a href="blog/index.html">ニュース</a>
         <a href="contact.html">お問い合わせ</a>
       </div>
     </div>
@@ -338,7 +338,7 @@
         <ul>
           <li>お支払いはStripeによるクレジットカード決済となります。</li>
           <li>お申し込み後、自動返信メールにて受講詳細をお送りします。</li>
-          <li>キャンセルポリシーについては<a href="faq.html">FAQ</a>をご確認ください。</li>
+          <li>キャンセルポリシーについては<a href="faq.html">よくある質問</a>をご確認ください。</li>
         </ul>
       </div>
     </div>
@@ -401,6 +401,19 @@
           <div class="form-group">
             <label for="booking-company">会社名・所属（任意）</label>
             <input type="text" id="booking-company" name="customer_company" placeholder="株式会社〇〇">
+          </div>
+          <div class="form-group">
+            <label for="booking-status">ご職業・ご身分 <span class="required">*必須</span></label>
+            <select id="booking-status" name="customer_status" required>
+              <option value="">選択してください</option>
+              <option value="法人">法人</option>
+              <option value="主婦">主婦</option>
+              <option value="社会人">社会人</option>
+              <option value="大学院生">大学院生</option>
+              <option value="大学生">大学生</option>
+              <option value="高校生">高校生</option>
+              <option value="その他">その他</option>
+            </select>
           </div>
 
           <button type="submit" class="btn-primary" id="submit-btn" style="width:100%;padding:1rem;font-size:1.1rem;">

@@ -370,7 +370,7 @@ def send_booking_confirmation(metadata: dict, amount: int):
 
     html = f"""
     <div style="max-width:600px;margin:0 auto;font-family:'Helvetica Neue',Arial,sans-serif;color:#1F2937;line-height:1.8;">
-      <div style="border-top:3px solid #0ABAB5;padding:40px 32px;">
+      <div style="border-top:3px solid #36C9E6;padding:40px 32px;">
         <h1 style="font-size:20px;font-weight:700;color:#1F2937;margin:0 0 8px;">
           お申込みありがとうございます
         </h1>
@@ -384,7 +384,7 @@ def send_booking_confirmation(metadata: dict, amount: int):
           以下の内容でご予約を承りました。
         </p>
 
-        <div style="background:#F9FAFB;border-left:3px solid #0ABAB5;padding:20px 24px;margin:28px 0;border-radius:2px;">
+        <div style="background:#F9FAFB;border-left:3px solid #36C9E6;padding:20px 24px;margin:28px 0;border-radius:2px;">
           <table style="width:100%;font-size:14px;border-collapse:collapse;">
             <tr>
               <td style="padding:8px 0;color:#6B7280;width:140px;">プログラム</td>
@@ -400,7 +400,7 @@ def send_booking_confirmation(metadata: dict, amount: int):
             </tr>
             <tr style="border-top:1px solid #E5E7EB;">
               <td style="padding:12px 0 8px;color:#6B7280;">お支払い金額</td>
-              <td style="padding:12px 0 8px;font-weight:700;font-size:18px;color:#0ABAB5;">
+              <td style="padding:12px 0 8px;font-weight:700;font-size:18px;color:#36C9E6;">
                 ¥{amount:,}
               </td>
             </tr>
@@ -438,7 +438,7 @@ def send_booking_confirmation(metadata: dict, amount: int):
     admin_subject = f"[新規予約] {customer_name}様 - {training_name} ({training_date})"
     admin_html = f"""
     <div style="font-family:sans-serif;font-size:14px;color:#333;line-height:1.8;">
-      <h2 style="color:#0ABAB5;">新規予約通知</h2>
+      <h2 style="color:#36C9E6;">新規予約通知</h2>
       <table style="border-collapse:collapse;">
         <tr><td style="padding:4px 16px 4px 0;color:#888;">氏名</td><td><strong>{customer_name}</strong></td></tr>
         <tr><td style="padding:4px 16px 4px 0;color:#888;">メール</td><td>{customer_email}</td></tr>
@@ -498,11 +498,11 @@ def send_line_booking_notification(metadata: dict, amount: int):
         "header": {
             "type": "box",
             "layout": "vertical",
-            "backgroundColor": "#0ABAB5",
+            "backgroundColor": "#36C9E6",
             "paddingAll": "16px",
             "contents": [
                 {"type": "text", "text": "予約完了", "color": "#FFFFFF", "weight": "bold", "size": "lg"},
-                {"type": "text", "text": "SYMMETRY Lab", "color": "#E6F7F6", "size": "xs", "margin": "sm"},
+                {"type": "text", "text": "SYMMETRY Lab", "color": "#EBF9FC", "size": "xs", "margin": "sm"},
             ],
         },
         "body": {
@@ -530,7 +530,7 @@ def send_line_booking_notification(metadata: dict, amount: int):
                         ]},
                         {"type": "box", "layout": "baseline", "contents": [
                             {"type": "text", "text": "お支払い", "size": "xs", "color": "#6B7280", "flex": 3},
-                            {"type": "text", "text": f"¥{amount:,}", "size": "sm", "flex": 5, "weight": "bold", "color": "#0ABAB5"},
+                            {"type": "text", "text": f"¥{amount:,}", "size": "sm", "flex": 5, "weight": "bold", "color": "#36C9E6"},
                         ]},
                     ],
                 },
