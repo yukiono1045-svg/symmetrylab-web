@@ -352,10 +352,16 @@ def send_email(to_email: str, subject: str, html_body: str):
         smtp_host = os.getenv("SMTP_HOST", "smtp.office365.com")
         smtp_port = int(os.getenv("SMTP_PORT", "587"))
 
-        with smtplib.SMTP(smtp_host, smtp_port) as server:
-            server.starttls()
-            server.login(SMTP_EMAIL, SMTP_PASSWORD)
-            server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
+        # 465: SSL接続 / 587: STARTTLS / その他: STARTTLS（後方互換）
+        if smtp_port == 465:
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=20) as server:
+                server.login(SMTP_EMAIL, SMTP_PASSWORD)
+                server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
+        else:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                server.starttls()
+                server.login(SMTP_EMAIL, SMTP_PASSWORD)
+                server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
 
         print(f"[メール送信成功] {subject} → {to_email}")
         return True
