@@ -79,6 +79,12 @@ SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 # ADMIN_EMAIL はカンマ区切りで複数指定可能（例: "admin1@example.com,admin2@example.com"）
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", SMTP_EMAIL)
 
+# --- Resend（HTTPS API）設定 ---
+# RESEND_API_KEY が設定されていれば Resend を優先使用、未設定なら SMTP にフォールバック
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", SMTP_EMAIL or "onboarding@resend.dev")
+RESEND_FROM_NAME = os.getenv("RESEND_FROM_NAME", "SYMMETRY Lab")
+
 
 def get_admin_emails() -> list:
     """ADMIN_EMAIL（カンマ区切り）をリストに分解して返す"""
@@ -337,8 +343,48 @@ def increment_referral_use(code: str):
 
 
 # --- メール送信 ---
-def send_email(to_email: str, subject: str, html_body: str):
-    """Gmail SMTP でメール送信"""
+def _send_email_via_resend(to_email: str, subject: str, html_body: str) -> bool:
+    """Resend HTTPS API でメール送信。失敗時 False を返す"""
+    try:
+        from_addr = f"{RESEND_FROM_NAME} <{RESEND_FROM_EMAIL}>"
+        payload = {
+            "from": from_addr,
+            "to": [to_email],
+            "subject": subject,
+            "html": html_body,
+        }
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            "https://api.resend.com/emails",
+            data=data,
+            headers={
+                "Authorization": f"Bearer {RESEND_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            body = resp.read().decode("utf-8")
+            if 200 <= resp.status < 300:
+                print(f"[Resend送信成功] {subject} → {to_email} (status={resp.status})")
+                return True
+            print(f"[Resend送信失敗] status={resp.status} body={body[:300]}")
+            return False
+    except urllib.error.HTTPError as e:
+        try:
+            err_body = e.read().decode("utf-8")
+        except Exception:
+            err_body = str(e)
+        print(f"[Resend送信失敗] HTTPError {e.code}: {err_body[:300]}")
+        return False
+    except Exception as e:
+        print(f"[Resend送信失敗] {type(e).__name__}: {e}")
+        traceback.print_exc()
+        return False
+
+
+def _send_email_via_smtp(to_email: str, subject: str, html_body: str) -> bool:
+    """従来の SMTP 経由でメール送信。失敗時 False を返す"""
     if not SMTP_EMAIL or not SMTP_PASSWORD:
         print(f"[メール] SMTP未設定のためスキップ: {subject} → {to_email}")
         return False
@@ -363,12 +409,31 @@ def send_email(to_email: str, subject: str, html_body: str):
                 server.login(SMTP_EMAIL, SMTP_PASSWORD)
                 server.sendmail(SMTP_EMAIL, to_email, msg.as_string())
 
-        print(f"[メール送信成功] {subject} → {to_email}")
+        print(f"[SMTP送信成功] {subject} → {to_email}")
         return True
     except Exception as e:
-        print(f"[メール送信失敗] {subject} → {to_email}: {e}")
+        print(f"[SMTP送信失敗] {subject} → {to_email}: {e}")
         traceback.print_exc()
         return False
+
+
+def send_email(to_email: str, subject: str, html_body: str) -> bool:
+    """
+    メール送信（Resend優先、フォールバックでSMTP）。
+    RESEND_API_KEY が設定されていれば Resend (HTTPS API) を使用。
+    未設定または失敗時は SMTP を試行。
+    """
+    if not to_email:
+        return False
+
+    # 1) Resend を優先
+    if RESEND_API_KEY:
+        if _send_email_via_resend(to_email, subject, html_body):
+            return True
+        print(f"[メール] Resend失敗 → SMTPフォールバックを試行")
+
+    # 2) SMTPフォールバック
+    return _send_email_via_smtp(to_email, subject, html_body)
 
 
 def send_booking_confirmation(metadata: dict, amount: int):
