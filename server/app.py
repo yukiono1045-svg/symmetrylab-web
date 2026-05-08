@@ -350,6 +350,7 @@ def _send_email_via_resend(to_email: str, subject: str, html_body: str) -> bool:
     """Resend HTTPS API でメール送信。失敗時 False を返す"""
     try:
         from_addr = f"{RESEND_FROM_NAME} <{RESEND_FROM_EMAIL}>"
+        print(f"[Resend] 送信試行 FROM={from_addr} TO={to_email} subject={subject[:50]}")
         payload = {
             "from": from_addr,
             "to": [to_email],
