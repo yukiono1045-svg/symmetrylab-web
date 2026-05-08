@@ -30,6 +30,7 @@ from pydantic import BaseModel
 load_dotenv()
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 ADMIN_KEY = os.getenv("ADMIN_KEY", "symmetry-admin-2026")
 DB_PATH = os.getenv("DB_PATH", "bookings.db")
@@ -74,7 +75,15 @@ except Exception as _e:
 # --- メール設定 ---
 SMTP_EMAIL = os.getenv("SMTP_EMAIL", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+# ADMIN_EMAIL はカンマ区切りで複数指定可能（例: "admin1@example.com,admin2@example.com"）
 ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", SMTP_EMAIL)
+
+
+def get_admin_emails() -> list:
+    """ADMIN_EMAIL（カンマ区切り）をリストに分解して返す"""
+    if not ADMIN_EMAIL:
+        return []
+    return [e.strip() for e in ADMIN_EMAIL.split(",") if e.strip()]
 
 # --- LINE設定 ---
 LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "")
@@ -450,8 +459,8 @@ def send_booking_confirmation(metadata: dict, amount: int):
       </table>
     </div>
     """
-    if ADMIN_EMAIL:
-        send_email(ADMIN_EMAIL, admin_subject, admin_html)
+    for admin in get_admin_emails():
+        send_email(admin, admin_subject, admin_html)
 
 
 # --- LINE Messaging API ---
@@ -741,6 +750,133 @@ async def confirm_booking(session_id: str):
             return {"status": "ok", "message": "予約は既に記録済みです", "already_recorded": True}
     except stripe.error.StripeError as e:
         raise HTTPException(status_code=400, detail=f"セッション情報の取得に失敗: {str(e)}")
+
+
+@app.post("/api/stripe-webhook")
+async def stripe_webhook(request: Request):
+    """
+    Stripe Webhookエンドポイント。
+    決済完了等のイベントを受信し、管理者にメール通知。
+    また、フォールバックとして予約をDBに記録（confirm-bookingと多重実行されてもsave_bookingでスキップされる）。
+    """
+    payload = await request.body()
+    sig_header = request.headers.get("Stripe-Signature", "")
+
+    # 署名検証
+    if not STRIPE_WEBHOOK_SECRET:
+        print("[Webhook] STRIPE_WEBHOOK_SECRET 未設定のため署名検証をスキップ（本番では必ず設定してください）")
+        try:
+            event = json.loads(payload.decode("utf-8"))
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid payload: {e}")
+    else:
+        try:
+            event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
+        except stripe.error.SignatureVerificationError as e:
+            print(f"[Webhook] 署名検証失敗: {e}")
+            raise HTTPException(status_code=400, detail="Invalid signature")
+        except Exception as e:
+            print(f"[Webhook] パース失敗: {e}")
+            raise HTTPException(status_code=400, detail=f"Invalid payload: {e}")
+
+    event_type = event.get("type", "unknown") if isinstance(event, dict) else event["type"]
+    event_id = event.get("id", "") if isinstance(event, dict) else event.get("id", "")
+    print(f"[Webhook] 受信: type={event_type} id={event_id}")
+
+    # checkout.session.completed のときに通知メール送信
+    if event_type == "checkout.session.completed":
+        session = event["data"]["object"]
+        session_id = session.get("id", "")
+        amount_total = session.get("amount_total", 0) or 0
+        md = session.get("metadata", {}) or {}
+
+        customer_name = md.get("customer_name", "")
+        customer_email = md.get("customer_email", "")
+        customer_phone = md.get("customer_phone", "")
+        training_name = md.get("training_name", "")
+        training_date = md.get("training_date", "")
+        sessions_count = md.get("sessions", "1")
+        referral_code = md.get("referral_code", "")
+
+        # 管理者宛にWebhook通知メール
+        admins = get_admin_emails()
+        if admins:
+            subject = f"[Webhook通知] 決済完了 - {customer_name}様 / {training_name}"
+            html = f"""
+            <div style="font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px;color:#1F2937;line-height:1.8;max-width:600px;">
+              <div style="border-top:3px solid #36C9E6;padding:24px;background:#FFFFFF;">
+                <h2 style="font-size:18px;color:#36C9E6;margin:0 0 8px;">Stripe Webhook通知 — 決済完了</h2>
+                <p style="font-size:12px;color:#6B7280;margin:0 0 20px;">checkout.session.completed</p>
+
+                <table style="border-collapse:collapse;width:100%;font-size:14px;">
+                  <tr><td style="padding:6px 16px 6px 0;color:#6B7280;width:140px;">セッションID</td><td style="font-family:monospace;font-size:12px;">{session_id}</td></tr>
+                  <tr><td style="padding:6px 16px 6px 0;color:#6B7280;">イベントID</td><td style="font-family:monospace;font-size:12px;">{event_id}</td></tr>
+                  <tr><td style="padding:6px 16px 6px 0;color:#6B7280;">氏名</td><td><strong>{customer_name}</strong></td></tr>
+                  <tr><td style="padding:6px 16px 6px 0;color:#6B7280;">メール</td><td>{customer_email}</td></tr>
+                  <tr><td style="padding:6px 16px 6px 0;color:#6B7280;">電話</td><td>{customer_phone}</td></tr>
+                  <tr><td style="padding:6px 16px 6px 0;color:#6B7280;">プログラム</td><td>{training_name}</td></tr>
+                  <tr><td style="padding:6px 16px 6px 0;color:#6B7280;">日程</td><td>{training_date}</td></tr>
+                  <tr><td style="padding:6px 16px 6px 0;color:#6B7280;">セッション数</td><td>{sessions_count}回</td></tr>
+                  <tr><td style="padding:6px 16px 6px 0;color:#6B7280;">紹介コード</td><td>{referral_code or '—'}</td></tr>
+                  <tr style="border-top:1px solid #E5E7EB;"><td style="padding:10px 16px 10px 0;color:#6B7280;">支払金額</td><td style="font-weight:700;font-size:18px;color:#36C9E6;">¥{amount_total:,}</td></tr>
+                </table>
+
+                <p style="font-size:12px;color:#9CA3AF;margin-top:24px;">
+                  本メールは Stripe Webhook（決済完了通知）を受信した時点で自動送信されています。
+                </p>
+              </div>
+            </div>
+            """
+            for admin in admins:
+                send_email(admin, subject, html)
+
+        # フォールバック：DB記録（confirm-bookingが既に走っている場合は inserted=False で何もしない）
+        try:
+            session_data = {
+                "id": session_id,
+                "amount_total": amount_total,
+                "metadata": {
+                    "training_type": md.get("training_type", ""),
+                    "training_name": training_name,
+                    "training_date": training_date,
+                    "customer_name": customer_name,
+                    "customer_email": customer_email,
+                    "customer_phone": customer_phone,
+                    "customer_company": md.get("customer_company", ""),
+                    "price": md.get("price", "0"),
+                },
+            }
+            inserted = save_booking(session_data)
+            if inserted:
+                # confirm-booking が呼ばれずにここで初記録されたら、顧客向けの確認メールも送る
+                send_booking_confirmation(session_data["metadata"], amount_total)
+                send_line_booking_notification(session_data["metadata"], amount_total)
+                used_code = referral_code
+                if used_code:
+                    increment_referral_use(used_code)
+                print(f"[Webhook] DB記録完了 session_id={session_id}")
+            else:
+                print(f"[Webhook] 既に記録済み session_id={session_id}（重複スキップ）")
+        except Exception as e:
+            print(f"[Webhook] DB記録エラー: {e}")
+            traceback.print_exc()
+
+    else:
+        # 他のイベントも管理者に簡易通知（必要に応じて）
+        admins = get_admin_emails()
+        if admins:
+            subject = f"[Webhook通知] {event_type}"
+            html = f"""
+            <div style="font-family:sans-serif;font-size:14px;color:#1F2937;line-height:1.8;">
+              <h3 style="color:#36C9E6;">Stripe Webhook 受信</h3>
+              <p><strong>イベント種別：</strong> {event_type}</p>
+              <p><strong>イベントID：</strong> <span style="font-family:monospace;font-size:12px;">{event_id}</span></p>
+            </div>
+            """
+            for admin in admins:
+                send_email(admin, subject, html)
+
+    return JSONResponse({"received": True})
 
 
 @app.get("/api/bookings/export")

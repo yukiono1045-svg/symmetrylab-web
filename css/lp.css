@@ -359,11 +359,11 @@
 }
 
 .lp-hero-section-title {
-  color: var(--lp-tiffany);
-  font-size: clamp(1.4rem, 2.5vw, 2rem);
-  font-weight: 700;
-  margin: 0;
-  line-height: 1.4;
+  color: var(--lp-tiffany) !important;
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+  line-height: 1.5 !important;
 }
 
 .lp-hero-badge {
@@ -543,10 +543,10 @@
 }
 
 .lp-section-title h2 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--lp-gray-900);
-  line-height: 1.5;
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  color: var(--lp-tiffany) !important;
+  line-height: 1.5 !important;
   margin-bottom: 16px;
   letter-spacing: -0.01em;
 }
@@ -599,9 +599,9 @@
 
 .lp-problems h2 {
   text-align: center;
-  font-size: 26px;
+  font-size: 1.25rem;
   font-weight: 700;
-  color: var(--lp-gray-900);
+  color: var(--lp-tiffany);
   margin-bottom: 40px;
   line-height: 1.6;
   letter-spacing: -0.01em;
@@ -710,9 +710,9 @@
 }
 
 .lp-solution-content h3 {
-  font-size: 22px;
+  font-size: 1.25rem;
   font-weight: 700;
-  color: var(--lp-gray-900);
+  color: var(--lp-tiffany);
   margin-bottom: 16px;
   letter-spacing: -0.01em;
 }
@@ -925,6 +925,8 @@
   line-height: 2;
   margin: 0;
   padding: 8px 20px 16px;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 /* ===== 料金セクション ===== */
@@ -2080,10 +2082,6 @@
     margin-bottom: 48px;
   }
 
-  .lp-section-title h2 {
-    font-size: 24px;
-  }
-
   .lp-problems {
     padding: 72px 0;
   }
@@ -2093,7 +2091,6 @@
   }
 
   .lp-problems h2 {
-    font-size: 20px;
     margin-bottom: 28px;
   }
 
