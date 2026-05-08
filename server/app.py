@@ -808,10 +808,31 @@ async def stripe_webhook(request: Request):
 
     # checkout.session.completed のときに通知メール送信
     if event_type == "checkout.session.completed":
-        session = event["data"]["object"]
-        session_id = session.get("id", "")
-        amount_total = session.get("amount_total", 0) or 0
-        md = session.get("metadata", {}) or {}
+        # stripe.Event でも dict でも安全にアクセスできるようヘルパー
+        def _safe_get(obj, key, default=None):
+            if isinstance(obj, dict):
+                return obj.get(key, default)
+            try:
+                v = obj[key]
+                return v if v is not None else default
+            except Exception:
+                pass
+            try:
+                return getattr(obj, key, default)
+            except Exception:
+                return default
+
+        data_obj = _safe_get(event, "data", {}) or {}
+        session = _safe_get(data_obj, "object", {}) or {}
+        session_id = _safe_get(session, "id", "") or ""
+        amount_total = _safe_get(session, "amount_total", 0) or 0
+        md = _safe_get(session, "metadata", {}) or {}
+        # stripe.Metadata を dict に変換（dict ライクにアクセス）
+        if not isinstance(md, dict):
+            try:
+                md = dict(md)
+            except Exception:
+                md = {}
 
         customer_name = md.get("customer_name", "")
         customer_email = md.get("customer_email", "")
