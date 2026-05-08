@@ -82,7 +82,10 @@ ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", SMTP_EMAIL)
 # --- Resend（HTTPS API）設定 ---
 # RESEND_API_KEY が設定されていれば Resend を優先使用、未設定なら SMTP にフォールバック
 RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", SMTP_EMAIL or "onboarding@resend.dev")
+# 送信元アドレスは Resend 認証済みドメインのみ使用可能。
+# 未設定時は Resend のテスト用アドレス onboarding@resend.dev を使う
+# （SMTP_EMAIL に Gmail 等を設定していても流用しない。Gmail は Resend で認証不可）
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", "onboarding@resend.dev")
 RESEND_FROM_NAME = os.getenv("RESEND_FROM_NAME", "SYMMETRY Lab")
 
 
