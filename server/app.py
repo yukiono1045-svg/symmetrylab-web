@@ -31,6 +31,7 @@ load_dotenv()
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+STRIPE_WEBHOOK_SECRET_TEST = os.getenv("STRIPE_WEBHOOK_SECRET_TEST", "")
 BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 ADMIN_KEY = os.getenv("ADMIN_KEY", "symmetry-admin-2026")
 DB_PATH = os.getenv("DB_PATH", "bookings.db")
@@ -762,22 +763,32 @@ async def stripe_webhook(request: Request):
     payload = await request.body()
     sig_header = request.headers.get("Stripe-Signature", "")
 
-    # 署名検証
-    if not STRIPE_WEBHOOK_SECRET:
-        print("[Webhook] STRIPE_WEBHOOK_SECRET 未設定のため署名検証をスキップ（本番では必ず設定してください）")
+    # 署名検証（本番・テスト両方のシークレットで試行）
+    secrets_to_try = [s for s in [STRIPE_WEBHOOK_SECRET, STRIPE_WEBHOOK_SECRET_TEST] if s]
+
+    if not secrets_to_try:
+        print("[Webhook] STRIPE_WEBHOOK_SECRET / STRIPE_WEBHOOK_SECRET_TEST 未設定のため署名検証をスキップ（本番では必ず設定してください）")
         try:
             event = json.loads(payload.decode("utf-8"))
         except Exception as e:
             raise HTTPException(status_code=400, detail=f"Invalid payload: {e}")
     else:
-        try:
-            event = stripe.Webhook.construct_event(payload, sig_header, STRIPE_WEBHOOK_SECRET)
-        except stripe.error.SignatureVerificationError as e:
-            print(f"[Webhook] 署名検証失敗: {e}")
+        event = None
+        last_err = None
+        for secret in secrets_to_try:
+            try:
+                event = stripe.Webhook.construct_event(payload, sig_header, secret)
+                break  # 検証成功
+            except stripe.error.SignatureVerificationError as e:
+                last_err = e
+                continue
+            except Exception as e:
+                print(f"[Webhook] パース失敗: {e}")
+                raise HTTPException(status_code=400, detail=f"Invalid payload: {e}")
+
+        if event is None:
+            print(f"[Webhook] 全シークレットで署名検証失敗: {last_err}")
             raise HTTPException(status_code=400, detail="Invalid signature")
-        except Exception as e:
-            print(f"[Webhook] パース失敗: {e}")
-            raise HTTPException(status_code=400, detail=f"Invalid payload: {e}")
 
     event_type = event.get("type", "unknown") if isinstance(event, dict) else event["type"]
     event_id = event.get("id", "") if isinstance(event, dict) else event.get("id", "")
