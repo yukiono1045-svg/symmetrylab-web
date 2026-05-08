@@ -790,8 +790,20 @@ async def stripe_webhook(request: Request):
             print(f"[Webhook] 全シークレットで署名検証失敗: {last_err}")
             raise HTTPException(status_code=400, detail="Invalid signature")
 
-    event_type = event.get("type", "unknown") if isinstance(event, dict) else event["type"]
-    event_id = event.get("id", "") if isinstance(event, dict) else event.get("id", "")
+    # event は stripe.Event オブジェクトまたは dict のどちらの可能性もある
+    if isinstance(event, dict):
+        event_type = event.get("type", "unknown")
+        event_id = event.get("id", "")
+    else:
+        # stripe.Event オブジェクトは [] アクセス可、属性アクセスも可
+        try:
+            event_type = event["type"]
+        except Exception:
+            event_type = getattr(event, "type", "unknown")
+        try:
+            event_id = event["id"]
+        except Exception:
+            event_id = getattr(event, "id", "")
     print(f"[Webhook] 受信: type={event_type} id={event_id}")
 
     # checkout.session.completed のときに通知メール送信
