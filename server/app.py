@@ -429,13 +429,13 @@ def send_email(to_email: str, subject: str, html_body: str) -> bool:
     if not to_email:
         return False
 
-    # 1) Resend を優先
+    # 1) Resend を優先（HTTPS API。Render等のSMTPブロック環境でも確実に送れる）
     if RESEND_API_KEY:
-        if _send_email_via_resend(to_email, subject, html_body):
-            return True
-        print(f"[メール] Resend失敗 → SMTPフォールバックを試行")
+        # Resend が設定されている場合、SMTPフォールバックは行わない。
+        # Render Free プランは SMTP アウトバウンドをブロックするためタイムアウトで遅延するだけ。
+        return _send_email_via_resend(to_email, subject, html_body)
 
-    # 2) SMTPフォールバック
+    # 2) RESEND_API_KEY 未設定時のみ SMTP を試行（ローカル開発などで利用）
     return _send_email_via_smtp(to_email, subject, html_body)
 
 
