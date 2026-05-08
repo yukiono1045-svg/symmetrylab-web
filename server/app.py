@@ -832,21 +832,41 @@ async def stripe_webhook(request: Request):
         session = _safe_get(data_obj, "object", {}) or {}
         session_id = _safe_get(session, "id", "") or ""
         amount_total = _safe_get(session, "amount_total", 0) or 0
-        md = _safe_get(session, "metadata", {}) or {}
-        # stripe.Metadata を dict に変換（dict ライクにアクセス）
-        if not isinstance(md, dict):
-            try:
-                md = dict(md)
-            except Exception:
-                md = {}
 
-        customer_name = md.get("customer_name", "")
-        customer_email = md.get("customer_email", "")
-        customer_phone = md.get("customer_phone", "")
-        training_name = md.get("training_name", "")
-        training_date = md.get("training_date", "")
-        sessions_count = md.get("sessions", "1")
-        referral_code = md.get("referral_code", "")
+        # Webhook payload の metadata は Python 3.14 環境で空に見える事がある
+        # → session_id を使って Stripe API から確実に再取得
+        md = {}
+        if session_id and stripe.api_key:
+            try:
+                full_session = stripe.checkout.Session.retrieve(session_id)
+                # full_session.metadata は dict ライクなオブジェクト
+                raw_md = getattr(full_session, "metadata", None) or {}
+                if hasattr(raw_md, "to_dict"):
+                    md = raw_md.to_dict()
+                else:
+                    try:
+                        md = dict(raw_md)
+                    except Exception:
+                        md = raw_md if isinstance(raw_md, dict) else {}
+                # amount_total も再取得した方が確実
+                amount_total = getattr(full_session, "amount_total", amount_total) or amount_total
+                print(f"[Webhook] セッション再取得OK metadata_keys={list(md.keys())}")
+            except Exception as e:
+                print(f"[Webhook] セッション再取得失敗: {e} → payload の metadata で続行")
+                md = _safe_get(session, "metadata", {}) or {}
+                if not isinstance(md, dict):
+                    try:
+                        md = dict(md)
+                    except Exception:
+                        md = {}
+
+        customer_name = md.get("customer_name", "") if isinstance(md, dict) else ""
+        customer_email = md.get("customer_email", "") if isinstance(md, dict) else ""
+        customer_phone = md.get("customer_phone", "") if isinstance(md, dict) else ""
+        training_name = md.get("training_name", "") if isinstance(md, dict) else ""
+        training_date = md.get("training_date", "") if isinstance(md, dict) else ""
+        sessions_count = md.get("sessions", "1") if isinstance(md, dict) else "1"
+        referral_code = md.get("referral_code", "") if isinstance(md, dict) else ""
 
         # 管理者宛にWebhook通知メール
         admins = get_admin_emails()
