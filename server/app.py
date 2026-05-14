@@ -55,15 +55,36 @@ TRAINING_DATES_PATH = Path(os.getenv("TRAINING_DATES_PATH", str(DEFAULT_TRAINING
 DEFAULT_REFERRAL_CODES = Path(__file__).parent / "referral_codes.json"
 REFERRAL_CODES_PATH = Path(os.getenv("REFERRAL_CODES_PATH", str(DEFAULT_REFERRAL_CODES)))
 
-# 永続ディスク側にファイルが無ければ、初回起動時にリポジトリ同梱のデフォルトをコピー
-# （失敗しても起動は継続する — 書き込み不可な環境でも最低限デフォルトをロードして動作させる）
+# 起動毎にリポジトリ同梱のデフォルトを永続ディスクへ反映
+# ただし管理画面で設定する available_slots / blocked_dates は永続ディスク側を維持
 try:
-    if not TRAINING_DATES_PATH.exists() and DEFAULT_TRAINING_DATES.exists():
+    if DEFAULT_TRAINING_DATES.exists():
+        with open(DEFAULT_TRAINING_DATES, "r", encoding="utf-8") as _f:
+            _default_data = json.load(_f)
+
+        _persistent_data = {}
+        if TRAINING_DATES_PATH.exists():
+            try:
+                with open(TRAINING_DATES_PATH, "r", encoding="utf-8") as _f:
+                    _persistent_data = json.load(_f)
+            except Exception:
+                _persistent_data = {}
+
+        # マージ：価格・名前等はデフォルトを優先、available_slots/blocked_dates は永続側を維持
+        for _t_type in _default_data:
+            if _t_type in _persistent_data:
+                for _preserve_key in ("available_slots", "blocked_dates"):
+                    if _preserve_key in _persistent_data[_t_type]:
+                        _default_data[_t_type][_preserve_key] = _persistent_data[_t_type][_preserve_key]
+
         TRAINING_DATES_PATH.parent.mkdir(parents=True, exist_ok=True)
-        TRAINING_DATES_PATH.write_text(DEFAULT_TRAINING_DATES.read_text(encoding="utf-8"), encoding="utf-8")
+        with open(TRAINING_DATES_PATH, "w", encoding="utf-8") as _f:
+            json.dump(_default_data, _f, ensure_ascii=False, indent=2)
+        print(f"[起動] training_dates.json をデフォルトとマージして反映")
 except Exception as _e:
-    print(f"[起動] training_dates.json の永続化領域への初期化に失敗（デフォルトを使用）: {_e}")
-    TRAINING_DATES_PATH = DEFAULT_TRAINING_DATES
+    print(f"[起動] training_dates.json のマージ失敗（デフォルトを使用）: {_e}")
+    if not TRAINING_DATES_PATH.exists():
+        TRAINING_DATES_PATH = DEFAULT_TRAINING_DATES
 
 try:
     if not REFERRAL_CODES_PATH.exists() and DEFAULT_REFERRAL_CODES.exists():
