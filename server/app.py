@@ -1157,7 +1157,7 @@ async def admin_save_referral_codes(request: Request, key: str = ""):
     return {"status": "ok", "count": len(body["codes"])}
 
 
-@app.get("/api/health")
+@app.api_route("/api/health", methods=["GET", "HEAD"])
 async def health():
     return {"status": "ok", "time": datetime.now().isoformat()}
 
