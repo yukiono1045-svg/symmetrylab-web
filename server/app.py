@@ -364,6 +364,8 @@ def _send_email_via_resend(to_email: str, subject: str, html_body: str) -> bool:
             headers={
                 "Authorization": f"Bearer {RESEND_API_KEY}",
                 "Content-Type": "application/json",
+                "User-Agent": "SYMMETRY-Lab-Booking/1.0",
+                "Accept": "application/json",
             },
             method="POST",
         )
