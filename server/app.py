@@ -499,8 +499,8 @@ def send_booking_confirmation(metadata: dict, amount: int):
         </h2>
         <ol style="font-size:14px;padding-left:20px;color:#4B5563;">
           <li style="margin-bottom:8px;">本メールで予約内容をご確認ください</li>
-          <li style="margin-bottom:8px;">セッション当日、Zoomリンクをメールでお送りします</li>
-          <li style="margin-bottom:8px;">お時間になりましたらZoomにてご参加ください</li>
+          <li style="margin-bottom:8px;">担当者よりTeamsリンクをメールでお送りします</li>
+          <li style="margin-bottom:8px;">お時間になりましたらTeamsにてご参加ください</li>
         </ol>
 
         <p style="font-size:14px;color:#4B5563;margin-top:28px;">
